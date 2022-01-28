@@ -5,11 +5,11 @@
 import hashlib
 import os
 import random
+import re
 import shutil
 import unittest
 
 import apps.lib.file_status as file_status
-
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TEST_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "tmp")
@@ -82,6 +82,53 @@ class TestFileInfo(_TestFileStatusBase):
 
         self.assertNotEqual(file1_info, non_existent)
         self.assertNotEqual(file2_info, non_existent)
+
+
+class TestDirInfo(_TestFileStatusBase):
+    """Tests FileInfo class"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.dirs = [
+            os.path.join(TEST_DIR_PATH, "bin"),
+            os.path.join(TEST_DIR_PATH, "build"),
+            os.path.join(TEST_DIR_PATH, "src"),
+        ]
+        self.files = [
+            os.path.join(self.dirs[0], "file1.txt"),
+            os.path.join(self.dirs[0], "file2.txt"),
+            os.path.join(self.dirs[0], "file3.txt"),
+            os.path.join(self.dirs[1], "file1.txt"),
+            os.path.join(self.dirs[1], "file2.txt"),
+            os.path.join(self.dirs[1], "file3.txt"),
+            os.path.join(self.dirs[2], "file1.txt"),
+            os.path.join(self.dirs[2], "file2.txt"),
+            os.path.join(self.dirs[2], "file3.txt"),
+        ]
+        for subdir in self.dirs:
+            os.mkdir(subdir)
+        for file_path in self.files:
+            with open(file_path, "w") as file:
+                print(file_path, file=file)
+
+    def test_create_no_ignore(self):
+        """Test creation of DirInfo without ignore."""
+        dir_info = file_status.DirInfo(TEST_DIR_PATH, [])
+        self.assertEqual(dir_info._path, TEST_DIR_PATH)
+        expected_files = {file: file_status.FileInfo(file) for file in self.files}
+        self.assertEqual(dir_info._files, expected_files)
+
+    def test_create_with_ignore(self):
+        """Test creation of DirInfo with ignore."""
+        dir_info = file_status.DirInfo(
+            TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+        self.assertEqual(dir_info._path, TEST_DIR_PATH)
+
+        filtered = list(filter(lambda file: not (file.endswith(
+            "file1.txt") or "build" in file), self.files))
+
+        expected_files = {file: file_status.FileInfo(file) for file in filtered}
+        self.assertEqual(dir_info._files, expected_files)
 
 
 if __name__ == "__main__":

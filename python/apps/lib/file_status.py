@@ -48,7 +48,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         return self._files == other._files
 
     @staticmethod
-    def _create_files(path: str, ignore: List[re.Pattern]):
+    def _create_files(path: str, ignore: List[re.Pattern]) -> Dict[str, FileInfo]:
         """Create a dict of files from the tree in path
 
         Args:
@@ -60,7 +60,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         """
         def _is_matched(full_file: str, ignore: List[re.Pattern]):
             for ign in ignore:
-                if ign.match(full_file):
+                if ign.fullmatch(full_file):
                     return True
             return False
 
