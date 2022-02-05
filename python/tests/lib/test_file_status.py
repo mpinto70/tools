@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 import hashlib
+import itertools
 import os
 import random
 import re
@@ -19,6 +20,8 @@ class _TestFileStatusBase(unittest.TestCase):
     """Base class for all file_status tests"""
 
     def setUp(self) -> None:
+        if os.path.isdir(TEST_DIR_PATH):
+            shutil.rmtree(TEST_DIR_PATH)
         self.maxDiff = None  # pylint: disable=invalid-name
         os.mkdir(TEST_DIR_PATH)
 
@@ -89,22 +92,10 @@ class TestDirInfo(_TestFileStatusBase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.dirs = [
-            os.path.join(TEST_DIR_PATH, "bin"),
-            os.path.join(TEST_DIR_PATH, "build"),
-            os.path.join(TEST_DIR_PATH, "src"),
-        ]
-        self.files = [
-            os.path.join(self.dirs[0], "file1.txt"),
-            os.path.join(self.dirs[0], "file2.txt"),
-            os.path.join(self.dirs[0], "file3.txt"),
-            os.path.join(self.dirs[1], "file1.txt"),
-            os.path.join(self.dirs[1], "file2.txt"),
-            os.path.join(self.dirs[1], "file3.txt"),
-            os.path.join(self.dirs[2], "file1.txt"),
-            os.path.join(self.dirs[2], "file2.txt"),
-            os.path.join(self.dirs[2], "file3.txt"),
-        ]
+        dirs = ["bin", "build", "src"]
+        files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
+        self.dirs = [os.path.join(*element) for element in itertools.product([TEST_DIR_PATH], dirs)]
+        self.files = [os.path.join(*element) for element in itertools.product(self.dirs, files)]
         for subdir in self.dirs:
             os.mkdir(subdir)
         for file_path in self.files:
@@ -129,6 +120,73 @@ class TestDirInfo(_TestFileStatusBase):
 
         expected_files = {file: file_status.FileInfo(file) for file in filtered}
         self.assertEqual(dir_info._files, expected_files)
+
+
+def _change_file(filename: str):
+    """Changes the contents of file"""
+    with open(filename, "a") as file:
+        print("more content", file=file)
+
+
+class TestDirsAndFilesInfo(_TestFileStatusBase):
+    """Tests DirsAndFilesInfo class"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        dirs = [os.path.join(*el)
+                for el in itertools.product([TEST_DIR_PATH], ["bin", "build", "src"])]
+        files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
+        self.dirs = [os.path.join(*el)
+                     for el in itertools.product([TEST_DIR_PATH], ["usr", "lib"])]
+        self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
+        self.ignores = [
+            re.compile(r".*ignore.*"),
+            re.compile(r".*/usr/.*"),
+        ]
+        for subdir in self.dirs:
+            os.mkdir(subdir)
+        for subdir in dirs:
+            os.mkdir(subdir)
+        for file_path in self.files:
+            with open(file_path, "w") as file:
+                print(file_path, file=file)
+
+    def test_create_file_infos(self):
+        """Test create_file_infos create FileInfo dict"""
+        file_infos = file_status.DirsAndFiles._create_file_infos(self.files)
+        expected = {file: file_status.FileInfo(file) for file in self.files}
+        self.assertEqual(file_infos, expected)
+
+    def test_create_dir_infos(self):
+        """Test create_dir_infos create DirInfo dict"""
+        dir_infos = file_status.DirsAndFiles._create_dir_infos(self.dirs, self.ignores)
+        expected = {adir: file_status.DirInfo(adir, self.ignores) for adir in self.dirs}
+        self.assertEqual(dir_infos, expected)
+
+    def test_create(self):
+        """Test creation of object"""
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
+        file_infos = file_status.DirsAndFiles._create_file_infos(self.files)
+        dir_infos = file_status.DirsAndFiles._create_dir_infos(self.dirs, self.ignores)
+
+        self.assertEqual(dirs_and_files._file_infos, file_infos)
+        self.assertEqual(dirs_and_files._dir_infos, dir_infos)
+        self.assertEqual(dirs_and_files._ignore, self.ignores)
+
+    def test_update(self):
+        """Test creation of object"""
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
+        self.assertFalse(dirs_and_files.update())
+        for file in self.files:
+            _change_file(file)
+            self.assertTrue(dirs_and_files.update())
+            self.assertFalse(dirs_and_files.update())
+
+        _change_file(os.path.join(self.dirs[0], "some-file"))  # /usr/ is ignored
+        self.assertFalse(dirs_and_files.update())
+        _change_file(os.path.join(self.dirs[1], "some-file"))
+        self.assertTrue(dirs_and_files.update())
+        self.assertFalse(dirs_and_files.update())
 
 
 if __name__ == "__main__":

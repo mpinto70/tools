@@ -105,10 +105,7 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
         Returns:
             [Dict[str, FileInfo]: dictionary mapping file names to FileInfo
         """
-        result = {}
-        for file in files:
-            result[file] = FileInfo(file)
-        return result
+        return {file: FileInfo(file) for file in files}
 
     @staticmethod
     def _create_dir_infos(dirs: List[str], ignore: List[re.Pattern]):
@@ -121,7 +118,4 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
         Returns:
             [Dict[str, DirInfo]: dictionary mapping dir names to DirInfo
         """
-        result = {}
-        for adir in dirs:
-            result[adir] = DirInfo(adir, ignore)
-        return result
+        return {adir: DirInfo(adir, ignore) for adir in dirs}
