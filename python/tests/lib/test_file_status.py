@@ -7,35 +7,19 @@ import itertools
 import os
 import random
 import re
-import shutil
 import unittest
 
 import apps.lib.file_status as file_status
-
-SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-TEST_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "tmp")
+import tests.lib.utils_tests_lib as utils
 
 
-class _TestFileStatusBase(unittest.TestCase):
-    """Base class for all file_status tests"""
-
-    def setUp(self) -> None:
-        if os.path.isdir(TEST_DIR_PATH):
-            shutil.rmtree(TEST_DIR_PATH)
-        self.maxDiff = None  # pylint: disable=invalid-name
-        os.mkdir(TEST_DIR_PATH)
-
-    def tearDown(self) -> None:
-        shutil.rmtree(TEST_DIR_PATH)
-
-
-class TestFileInfo(_TestFileStatusBase):
+class TestFileInfo(utils.TestLibBase):
     """Tests FileInfo class"""
 
     def setUp(self) -> None:
         super().setUp()
-        self.file1_path = os.path.join(TEST_DIR_PATH, "file1.txt")
-        self.file2_path = os.path.join(TEST_DIR_PATH, "file2.txt")
+        self.file1_path = os.path.join(utils.TEST_DIR_PATH, "file1.txt")
+        self.file2_path = os.path.join(utils.TEST_DIR_PATH, "file2.txt")
         self.file1_content = f"Some content {random.randint(500, 1500)}"
         self.file2_content = f"Other content {random.randint(500, 1500)}"
         with open(self.file1_path, "w") as file:
@@ -87,14 +71,15 @@ class TestFileInfo(_TestFileStatusBase):
         self.assertNotEqual(file2_info, non_existent)
 
 
-class TestDirInfo(_TestFileStatusBase):
+class TestDirInfo(utils.TestLibBase):
     """Tests FileInfo class"""
 
     def setUp(self) -> None:
         super().setUp()
         dirs = ["bin", "build", "src"]
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
-        self.dirs = [os.path.join(*element) for element in itertools.product([TEST_DIR_PATH], dirs)]
+        self.dirs = [os.path.join(*element)
+                     for element in itertools.product([utils.TEST_DIR_PATH], dirs)]
         self.files = [os.path.join(*element) for element in itertools.product(self.dirs, files)]
         for subdir in self.dirs:
             os.mkdir(subdir)
@@ -104,16 +89,16 @@ class TestDirInfo(_TestFileStatusBase):
 
     def test_create_no_ignore(self):
         """Test creation of DirInfo without ignore."""
-        dir_info = file_status.DirInfo(TEST_DIR_PATH, [])
-        self.assertEqual(dir_info._path, TEST_DIR_PATH)
+        dir_info = file_status.DirInfo(utils.TEST_DIR_PATH, [])
+        self.assertEqual(dir_info._path, utils.TEST_DIR_PATH)
         expected_files = {file: file_status.FileInfo(file) for file in self.files}
         self.assertEqual(dir_info._files, expected_files)
 
     def test_create_with_ignore(self):
         """Test creation of DirInfo with ignore."""
         dir_info = file_status.DirInfo(
-            TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
-        self.assertEqual(dir_info._path, TEST_DIR_PATH)
+            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+        self.assertEqual(dir_info._path, utils.TEST_DIR_PATH)
 
         filtered = list(filter(lambda file: not (file.endswith(
             "file1.txt") or "build" in file), self.files))
@@ -122,22 +107,16 @@ class TestDirInfo(_TestFileStatusBase):
         self.assertEqual(dir_info._files, expected_files)
 
 
-def _change_file(filename: str):
-    """Changes the contents of file"""
-    with open(filename, "a") as file:
-        print("more content", file=file)
-
-
-class TestDirsAndFilesInfo(_TestFileStatusBase):
+class TestDirsAndFilesInfo(utils.TestLibBase):
     """Tests DirsAndFilesInfo class"""
 
     def setUp(self) -> None:
         super().setUp()
         dirs = [os.path.join(*el)
-                for el in itertools.product([TEST_DIR_PATH], ["bin", "build", "src"])]
+                for el in itertools.product([utils.TEST_DIR_PATH], ["bin", "build", "src"])]
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
         self.dirs = [os.path.join(*el)
-                     for el in itertools.product([TEST_DIR_PATH], ["usr", "lib"])]
+                     for el in itertools.product([utils.TEST_DIR_PATH], ["usr", "lib"])]
         self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
         self.ignores = [
             re.compile(r".*ignore.*"),
@@ -178,13 +157,13 @@ class TestDirsAndFilesInfo(_TestFileStatusBase):
         dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
         self.assertFalse(dirs_and_files.update())
         for file in self.files:
-            _change_file(file)
+            utils.change_file(file)
             self.assertTrue(dirs_and_files.update())
             self.assertFalse(dirs_and_files.update())
 
-        _change_file(os.path.join(self.dirs[0], "some-file"))  # /usr/ is ignored
+        utils.change_file(os.path.join(self.dirs[0], "some-file"))  # /usr/ is ignored
         self.assertFalse(dirs_and_files.update())
-        _change_file(os.path.join(self.dirs[1], "some-file"))
+        utils.change_file(os.path.join(self.dirs[1], "some-file"))
         self.assertTrue(dirs_and_files.update())
         self.assertFalse(dirs_and_files.update())
 
