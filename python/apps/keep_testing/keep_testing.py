@@ -9,6 +9,7 @@ from typing import List
 
 import apps.lib.config_log as config_log
 import apps.lib.file_status as file_status
+import apps.lib.dir_watcher as dir_watcher
 
 
 def normalize_paths(paths: List[str], exists) -> List[str]:
@@ -71,52 +72,64 @@ def execution_loop(cmds: List[str],
 
     logging.debug("Starting watching")
     dirs_files = file_status.DirsAndFiles(files, dirs, ignore)
+    watcher = dir_watcher.DirWatcher(files, dirs)
     logging.debug("Information gathered")
+    should_execute = True
     while True:
-        if dirs_files.update():
+        if should_execute:
             for cmd in cmds:
-                logging.info("Executing %s", cmd)
-        else:
-            logging.debug("Nothing changed")
+                if os.system(cmd) == 0:
+                    logging.info("Success: %s", cmd)
+                else:
+                    logging.error("Command failed: %s", cmd)
+                    break
+
+        while not watcher.changed():
             time.sleep(sleep)
+        watcher = dir_watcher.DirWatcher(files, dirs)
+        should_execute = dirs_files.update()
 
 
 def main():
     """Keep running commands watching directories"""
 
-    parser = argparse.ArgumentParser(
-        description="Keep runing a command based on changes in a tree",
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-c", "--cmds", type=str, nargs="+", required=True,
-                        help="command(s) to execute", action="extend")
-    parser.add_argument("-d", "--dirs", type=str, nargs="+",
-                        help="directory(ies) to watch", action="extend")
-    parser.add_argument("-f", "--files", type=str, nargs="+",
-                        help="file(s) to watch", action="extend")
-    parser.add_argument("-i", "--ignore", type=str, nargs="+",
-                        help="file(s) or directory(ies) to ignore", action="extend")
-    parser.add_argument("-s", "--sleep", type=float, default=0.2)
-    parser.add_argument("--debug", action="store_true", help="set log level to DEBUG")
+    try:
 
-    args = parser.parse_args()
+        parser = argparse.ArgumentParser(
+            description="Keep runing a command based on changes in a tree",
+            formatter_class=argparse.RawTextHelpFormatter)
+        parser.add_argument("-c", "--cmds", type=str, nargs="+", required=True,
+                            help="command(s) to execute", action="extend")
+        parser.add_argument("-d", "--dirs", type=str, nargs="+",
+                            help="directory(ies) to watch", action="extend")
+        parser.add_argument("-f", "--files", type=str, nargs="+",
+                            help="file(s) to watch", action="extend")
+        parser.add_argument("-i", "--ignore", type=str, nargs="+",
+                            help="file(s) or directory(ies) to ignore", action="extend")
+        parser.add_argument("-s", "--sleep", type=float, default=0.2)
+        parser.add_argument("--debug", action="store_true", help="set log level to DEBUG")
 
-    config_log.init(args.debug)
+        args = parser.parse_args()
 
-    logging.info("Executing %s", args.cmds)
-    if args.dirs:
-        logging.info("Watching dirs %s", args.dirs)
-    if args.files:
-        logging.info("Watching files %s", args.files)
-    if args.ignore:
-        logging.info("Ignoring %s", args.ignore)
+        config_log.init(args.debug)
 
-    if not args.files and not args.dirs:
-        logging.critical("Either provide files or directories")
+        logging.info("Executing %s", args.cmds)
+        if args.dirs:
+            logging.info("Watching dirs %s", args.dirs)
+        if args.files:
+            logging.info("Watching files %s", args.files)
+        if args.ignore:
+            logging.info("Ignoring %s", args.ignore)
 
-    files = normalize_paths(args.files, os.path.isfile)
-    dirs = normalize_paths(args.dirs, os.path.isdir)
-    ignore = create_regexes(args.ignore)
-    execution_loop(args.cmds, files, dirs, ignore, args.sleep)
+        if not args.files and not args.dirs:
+            logging.critical("Either provide files or directories")
+
+        files = normalize_paths(args.files, os.path.isfile)
+        dirs = normalize_paths(args.dirs, os.path.isdir)
+        ignore = create_regexes(args.ignore)
+        execution_loop(args.cmds, files, dirs, ignore, args.sleep)
+    except KeyboardInterrupt:
+        logging.info("Ctrl+C pressed")
 
 
 if __name__ == "__main__":
