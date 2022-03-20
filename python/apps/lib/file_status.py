@@ -17,7 +17,9 @@ class FileInfo:  # pylint: disable=too-few-public-methods
             self._datetime = 0
             self._hash = ""
 
-    def __eq__(self, other: "FileInfo") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FileInfo):
+            return NotImplemented
         return (self._datetime == other._datetime
                 and self._hash == other._hash)
 
@@ -44,7 +46,9 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         self._path = path
         self._files = DirInfo._create_files(path, ignore)
 
-    def __eq__(self, other: "DirInfo") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DirInfo):
+            return NotImplemented
         return self._files == other._files
 
     @staticmethod

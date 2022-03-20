@@ -36,9 +36,8 @@ class DirWatcher:  # pylint: disable=too-few-public-methods
         """Removes directories that are subdirs of other directories in the set"""
         unique_dirs = {os.path.dirname(file) for file in files}
         unique_dirs = unique_dirs.union(set(dirs))
-        unique_dirs = sorted(unique_dirs)
-        watched = []
-        for candidate in unique_dirs:
+        watched: list[str] = []
+        for candidate in sorted(unique_dirs):
             if not watched or not candidate.startswith(watched[-1]):
                 watched.append(candidate)
         return watched
