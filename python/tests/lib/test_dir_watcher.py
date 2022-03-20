@@ -69,6 +69,15 @@ class TestDirWatcher(utils.TestLibBase):
         utils.change_file(self.file_not_watched)
         self.assertFalse(watcher.changed(), msg=self.file_not_watched)
 
+    def test_no_change_after_check(self):
+        """Test that after checking for change, the next check is False"""
+        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
+
+        for file in self.files:
+            utils.change_file(file)
+            self.assertTrue(watcher.changed(), msg=file)
+            self.assertFalse(watcher.changed(), msg=file)
+
     def test_create_file(self):
         """Test that when a file is craeted returns True"""
         watcher = dir_watcher.DirWatcher(self.files, self.dirs)
@@ -105,7 +114,7 @@ class TestDirWatcher(utils.TestLibBase):
         self.assertFalse(watcher.changed(), msg=self.file_not_watched)
 
     def test_delete_dir(self):
-        """Test that when a directory is craeted returns True"""
+        """Test that when a directory is removed returns True"""
         for file in self.files:
             os.remove(file)
         os.remove(self.file_not_watched)
@@ -118,6 +127,40 @@ class TestDirWatcher(utils.TestLibBase):
 
         os.rmdir(self.dir_not_watched)
         self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+
+    def test_create_file_in_created_dir(self):
+        """Test that when a file is craeted under a created dir returns True"""
+        watcher = dir_watcher.DirWatcher([], self.dirs)
+
+        for adir in self.dirs:
+            new_dir = os.path.join(adir, "new_dir")
+            os.mkdir(new_dir)
+            self.assertTrue(watcher.changed())
+            new_file = os.path.join(new_dir, "new_file.txt")
+            utils.create_file(new_file)
+            self.assertTrue(watcher.changed())
+
+        os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
+        self.assertFalse(watcher.changed())
+        utils.create_file(os.path.join(self.dir_not_watched, "new_dir", "new_file.txt"))
+        self.assertFalse(watcher.changed())
+
+    def test_create_dir_in_created_dir(self):
+        """Test that when a dir is craeted under a created dir returns True"""
+        watcher = dir_watcher.DirWatcher([], self.dirs)
+
+        for adir in self.dirs:
+            new_dir = os.path.join(adir, "new_dir")
+            os.mkdir(new_dir)
+            self.assertTrue(watcher.changed())
+            new_sub_dir = os.path.join(adir, "new_dir", "sub_dir")
+            os.mkdir(new_sub_dir)
+            self.assertTrue(watcher.changed())
+
+        os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
+        self.assertFalse(watcher.changed())
+        os.mkdir(os.path.join(self.dir_not_watched, "new_dir", "sub_dir"))
+        self.assertFalse(watcher.changed())
 
 
 if __name__ == "__main__":
