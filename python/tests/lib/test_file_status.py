@@ -96,8 +96,10 @@ class TestDirInfo(utils.TestLibBase):
 
     def test_create_with_ignore(self):
         """Test creation of DirInfo with ignore."""
+        os.mkdir(os.path.join(utils.TEST_DIR_PATH, "build", "ignored"))
+
         dir_info = file_status.DirInfo(
-            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build\b.*")])
         self.assertEqual(dir_info._path, utils.TEST_DIR_PATH)
 
         filtered = list(filter(lambda file: not (file.endswith(
@@ -105,6 +107,20 @@ class TestDirInfo(utils.TestLibBase):
 
         expected_files = {file: file_status.FileInfo(file) for file in filtered}
         self.assertEqual(dir_info._files, expected_files)
+        # dirs[1] is build that is ignored
+        self.assertEqual(dir_info._dirs, [self.dirs[0], self.dirs[2]])
+
+    def test_create_with_subdir_in_ignored_dir(self):
+        """Test creation of DirInfo with ignore."""
+        dir_info_0 = file_status.DirInfo(
+            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+
+        os.mkdir(os.path.join(self.dirs[1], "new_dir"))  # build is ignored
+
+        dir_info_1 = file_status.DirInfo(
+            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+
+        self.assertEqual(dir_info_0, dir_info_1)
 
 
 class TestDirsAndFilesInfo(utils.TestLibBase):
@@ -152,20 +168,37 @@ class TestDirsAndFilesInfo(utils.TestLibBase):
         self.assertEqual(dirs_and_files._dir_infos, dir_infos)
         self.assertEqual(dirs_and_files._ignore, self.ignores)
 
-    def test_update(self):
-        """Test creation of object"""
+    def test_change_in_files(self):
+        """Test change in files are reported as True"""
         dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
         self.assertFalse(dirs_and_files.update())
         for file in self.files:
             utils.change_file(file)
             self.assertTrue(dirs_and_files.update())
-            self.assertFalse(dirs_and_files.update())
+            self.assertFalse(dirs_and_files.update())  # subsequent calls always return False
+
+    def test_change_in_ignored_files(self):
+        """Test change in ignored files/dirs are reported as False"""
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
 
         utils.change_file(os.path.join(self.dirs[0], "some-file"))  # /usr/ is ignored
         self.assertFalse(dirs_and_files.update())
-        utils.change_file(os.path.join(self.dirs[1], "some-file"))
-        self.assertTrue(dirs_and_files.update())
+        utils.change_file(os.path.join(self.dirs[1], "file-ignored.txt"))
         self.assertFalse(dirs_and_files.update())
+
+    def test_creation_of_new_files(self):
+        """Test creation of files are reported as True"""
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
+
+        utils.change_file(os.path.join(self.dirs[1], "some-file"))  # /lib/ is not ignored
+        self.assertTrue(dirs_and_files.update())
+
+    def test_creation_of_new_dirs(self):
+        """Test creation of directories are reported as True"""
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
+
+        os.mkdir(os.path.join(self.dirs[1], "some-dir"))  # /lib/ is not ignored
+        self.assertTrue(dirs_and_files.update())
 
 
 if __name__ == "__main__":

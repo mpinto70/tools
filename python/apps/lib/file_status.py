@@ -3,7 +3,7 @@
 import hashlib
 import os
 import re
-from typing import List, Dict
+from typing import Dict, List, Tuple
 
 
 class FileInfo:  # pylint: disable=too-few-public-methods
@@ -44,15 +44,16 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         if not os.path.isdir(path):
             raise RuntimeError(f"File not found {path}")
         self._path = path
-        self._files = DirInfo._create_files(path, ignore)
+        self._files, self._dirs = DirInfo._create_files_dirs(path, ignore)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DirInfo):
             return NotImplemented
-        return self._files == other._files
+        return self._files == other._files and self._dirs == other._dirs
 
     @staticmethod
-    def _create_files(path: str, ignore: List[re.Pattern]) -> Dict[str, FileInfo]:
+    def _create_files_dirs(path: str,
+                           ignore: List[re.Pattern]) -> Tuple[Dict[str, FileInfo], List[str]]:
         """Create a dict of files from the tree in path
 
         Args:
@@ -60,7 +61,8 @@ class DirInfo:  # pylint: disable=too-few-public-methods
             ignore (List[re.Pattern]): list of ignore rules
 
         Returns:
-            [Dict[str, FileInfo]: dictionary mapping file names to FileInfo
+            (Dict[str, FileInfo], List[str]): dictionary mapping file names to FileInfo and
+                a list of directories
         """
         def _is_matched(full_file: str, ignore: List[re.Pattern]):
             for ign in ignore:
@@ -69,6 +71,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
             return False
 
         files = {}
+        dirs: list[str] = []
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 full_file = os.path.join(dirpath, filename)
@@ -76,8 +79,12 @@ class DirInfo:  # pylint: disable=too-few-public-methods
                     files[full_file] = FileInfo(full_file)
             for dirname in dirnames:
                 full_dir = os.path.join(dirpath, dirname)
-                files.update(DirInfo._create_files(full_dir, ignore))
-        return files
+                if not _is_matched(full_dir, ignore):
+                    dirs.append(full_dir)
+                    subfiles, subdirs = DirInfo._create_files_dirs(full_dir, ignore)
+                    files.update(subfiles)
+                    dirs.extend(subdirs)
+        return files, sorted(dirs)
 
 
 class DirsAndFiles:  # pylint: disable=too-few-public-methods
