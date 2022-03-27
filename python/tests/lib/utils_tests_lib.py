@@ -8,7 +8,7 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TEST_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "tmp")
 
 
-class TestLibBase(unittest.TestCase):
+class TestWithTmpDir(unittest.TestCase):
     """Base class for all tests in lib"""
 
     def setUp(self) -> None:

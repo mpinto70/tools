@@ -9,11 +9,11 @@ import random
 import re
 import unittest
 
-import apps.lib.file_status as file_status
+import apps.keep_testing.lib.file_status as file_status
 import tests.lib.utils_tests_lib as utils
 
 
-class TestFileInfo(utils.TestLibBase):
+class TestFileInfo(utils.TestWithTmpDir):
     """Tests FileInfo class"""
 
     def setUp(self) -> None:
@@ -71,7 +71,7 @@ class TestFileInfo(utils.TestLibBase):
         self.assertNotEqual(file2_info, non_existent)
 
 
-class TestDirInfo(utils.TestLibBase):
+class TestDirInfo(utils.TestWithTmpDir):
     """Tests FileInfo class"""
 
     def setUp(self) -> None:
@@ -123,7 +123,7 @@ class TestDirInfo(utils.TestLibBase):
         self.assertEqual(dir_info_0, dir_info_1)
 
 
-class TestDirsAndFilesInfo(utils.TestLibBase):
+class TestDirsAndFilesInfo(utils.TestWithTmpDir):
     """Tests DirsAndFilesInfo class"""
 
     def setUp(self) -> None:
