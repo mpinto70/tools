@@ -8,8 +8,8 @@ import time
 from typing import List
 
 import apps.lib.config_log as config_log
-import apps.lib.file_status as file_status
-import apps.lib.dir_watcher as dir_watcher
+import apps.keep_testing.lib.file_status as file_status
+import apps.keep_testing.lib.dir_watcher as dir_watcher
 
 
 def normalize_paths(paths: List[str], exists) -> List[str]:

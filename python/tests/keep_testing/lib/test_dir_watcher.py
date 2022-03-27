@@ -7,11 +7,11 @@ import os
 import shutil
 import unittest
 
-import apps.lib.dir_watcher as dir_watcher
+import apps.keep_testing.lib.dir_watcher as dir_watcher
 import tests.lib.utils_tests_lib as utils
 
 
-class TestDirWatcher(utils.TestLibBase):
+class TestDirWatcher(utils.TestWithTmpDir):
     """Tests DirWatcher class"""
 
     def setUp(self) -> None:
