@@ -1,0 +1,2 @@
+coloredlogs==15.0.1
+inotify==0.2.10
