@@ -87,7 +87,10 @@ def execution_loop(cmds: List[str],
         while not watcher.changed():
             time.sleep(sleep)
         watcher = dir_watcher.DirWatcher(files, dirs)
+        begin = time.time()
         should_execute = dirs_files.update()
+        end = time.time()
+        logging.debug("Time to check: %f", end - begin)
 
 
 def main():
