@@ -7,9 +7,9 @@ import re
 import time
 from typing import List
 
-import apps.lib.config_log as config_log
-import apps.keep_testing.lib.file_status as file_status
-import apps.keep_testing.lib.dir_watcher as dir_watcher
+import apps.util.config_log as config_log
+import apps.keep_testing.util.file_status as file_status
+import apps.keep_testing.util.dir_watcher as dir_watcher
 
 
 def normalize_paths(paths: List[str], exists) -> List[str]:
@@ -74,23 +74,27 @@ def execution_loop(cmds: List[str],
     dirs_files = file_status.DirsAndFiles(files, dirs, ignore)
     watcher = dir_watcher.DirWatcher(files, dirs)
     logging.debug("Information gathered")
-    should_execute = True
     while True:
-        if should_execute:
-            for cmd in cmds:
-                if os.system(cmd) == 0:
-                    logging.info("Success: %s", cmd)
-                else:
-                    logging.error("Command failed: %s", cmd)
-                    break
+        for cmd in cmds:
+            if os.system(cmd) == 0:
+                logging.info("Success: %s", cmd)
+            else:
+                logging.error("Command failed: %s", cmd)
+                break
 
-        while not watcher.changed():
-            time.sleep(sleep)
-        watcher = dir_watcher.DirWatcher(files, dirs)
-        begin = time.time()
-        should_execute = dirs_files.update()
-        end = time.time()
-        logging.debug("Time to check: %f", end - begin)
+        changed: List[str] = []
+        while not changed:
+            while not watcher.changed():
+                time.sleep(sleep)
+            watcher = dir_watcher.DirWatcher(files, dirs)
+            begin = time.time()
+            changed = dirs_files.update()
+            end = time.time()
+            logging.debug("Time to check: %f", end - begin)
+            if changed:
+                logging.info("Changes detected:")
+                for change in changed:
+                    logging.info("- %s", change)
 
 
 def main():

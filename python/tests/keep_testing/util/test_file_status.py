@@ -9,8 +9,8 @@ import random
 import re
 import unittest
 
-import apps.keep_testing.lib.file_status as file_status
-import tests.lib.utils_tests_lib as utils
+import apps.keep_testing.util.file_status as file_status
+import tests.util.utils_tests_lib as utils
 
 
 class TestFileInfo(utils.TestWithTmpDir):
@@ -84,7 +84,7 @@ class TestDirInfo(utils.TestWithTmpDir):
         for subdir in self.dirs:
             os.mkdir(subdir)
         for file_path in self.files:
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf_8") as file:
                 print(file_path, file=file)
 
     def test_create_no_ignore(self):
@@ -143,7 +143,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
         for subdir in dirs:
             os.mkdir(subdir)
         for file_path in self.files:
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf_8") as file:
                 print(file_path, file=file)
 
     def test_create_file_infos(self):

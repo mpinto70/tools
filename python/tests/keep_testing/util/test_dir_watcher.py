@@ -7,8 +7,8 @@ import os
 import shutil
 import unittest
 
-import apps.keep_testing.lib.dir_watcher as dir_watcher
-import tests.lib.utils_tests_lib as utils
+import apps.keep_testing.util.dir_watcher as dir_watcher
+import tests.util.utils_tests_lib as utils
 
 
 class TestDirWatcher(utils.TestWithTmpDir):

@@ -37,6 +37,33 @@ class FileInfo:  # pylint: disable=too-few-public-methods
         return hasher.hexdigest()
 
 
+def _changed_files(lhs: Dict[str, FileInfo], rhs: Dict[str, FileInfo]) -> List[str]:
+    """Return a list of files that has changed from lhs to rhs
+
+    Args:
+        lhs (Dict[str, FileInfo]): the first list
+        rhs (Dict[str, FileInfo]): the second list
+
+    Returns:
+        List[str]: list of changed files
+    """
+    if lhs == rhs:
+        return []
+
+    result = []
+    for file_name, file_info in lhs.items():
+        if file_name not in rhs:
+            result.append(f"deleted {file_name}")
+        elif file_info != rhs[file_name]:
+            result.append(f"changed {file_name}")
+
+    for file_name in rhs:
+        if file_name not in lhs:
+            result.append(f"created {file_name}")
+
+    return result
+
+
 class DirInfo:  # pylint: disable=too-few-public-methods
     """Class that manages file info"""
 
@@ -50,6 +77,33 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         if not isinstance(other, DirInfo):
             return NotImplemented
         return self._files == other._files and self._dirs == other._dirs
+
+    def changed(self, other: object) -> List[str]:
+        """ Return a list of changed files and directories
+
+        Args:
+            other (object): the other object
+
+        Returns:
+            List[str]: changed files and directories
+        """
+        if not isinstance(other, DirInfo):
+            return []
+
+        if self._files == other.files and self._dirs == other.dirs:
+            return []
+
+        result = _changed_files(self._files, other.files)
+
+        for adir in self._dirs:
+            if adir not in other.dirs:
+                result.append(f"deleted {adir}")
+
+        for adir in other.dirs:
+            if adir not in self._dirs:
+                result.append(f"created {adir}")
+
+        return result
 
     @staticmethod
     def _create_files_dirs(path: str,
@@ -86,6 +140,51 @@ class DirInfo:  # pylint: disable=too-few-public-methods
                     dirs.extend(subdirs)
         return files, sorted(dirs)
 
+    @property
+    def files(self) -> Dict[str, FileInfo]:
+        """Returns the files
+
+        Returns:
+            Dict[str, FileInfo]: the files
+        """
+        return self._files
+
+    @property
+    def dirs(self) -> List[str]:
+        """Returns the dirs
+
+        Returns:
+            List[str]: the dirs
+        """
+        return self._dirs
+
+
+def _changed_dirs(lhs: Dict[str, DirInfo], rhs: Dict[str, DirInfo]) -> List[str]:
+    """Return a list of files that has changed from lhs to rhs
+
+    Args:
+        lhs (Dict[str, DirInfo]): the first list
+        rhs (Dict[str, DirInfo]): the second list
+
+    Returns:
+        List[str]: list of changed files
+    """
+    if lhs == rhs:
+        return []
+
+    result = []
+    for dir_name, dir_info in lhs.items():
+        if dir_name not in rhs:
+            result.append(f"deleted {dir_name}")
+        else:
+            result.extend(dir_info.changed(rhs[dir_name]))
+
+    for dir_name in rhs:
+        if dir_name not in lhs:
+            result.append(f"created {dir_name}")
+
+    return result
+
 
 class DirsAndFiles:  # pylint: disable=too-few-public-methods
     """Class that manages DirInfos and FileInfos"""
@@ -95,16 +194,17 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
         self._ignore = ignore
         self._dir_infos = DirsAndFiles._create_dir_infos(sorted(dirs), ignore)
 
-    def update(self) -> bool:
+    def update(self) -> List[str]:
         """Update directory and files info and return if anything changed"""
         file_infos = DirsAndFiles._create_file_infos(sorted(self._file_infos.keys()))
         dir_infos = DirsAndFiles._create_dir_infos(sorted(self._dir_infos.keys()), self._ignore)
 
-        changed = file_infos != self._file_infos or dir_infos != self._dir_infos
+        changed = _changed_files(self._file_infos, file_infos) + \
+            _changed_dirs(self._dir_infos, dir_infos)
         self._file_infos = file_infos
         self._dir_infos = dir_infos
 
-        return changed
+        return sorted(changed)
 
     @staticmethod
     def _create_file_infos(files: List[str]) -> Dict[str, FileInfo]:
