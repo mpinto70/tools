@@ -194,7 +194,7 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
         self._ignore = ignore
         self._dir_infos = DirsAndFiles._create_dir_infos(sorted(dirs), ignore)
 
-    def update(self) -> bool:
+    def update(self) -> List[str]:
         """Update directory and files info and return if anything changed"""
         file_infos = DirsAndFiles._create_file_infos(sorted(self._file_infos.keys()))
         dir_infos = DirsAndFiles._create_dir_infos(sorted(self._dir_infos.keys()), self._ignore)

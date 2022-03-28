@@ -2,7 +2,6 @@
 
 # pylint: disable=protected-access
 
-from encodings import utf_8
 import hashlib
 import itertools
 import os
@@ -10,8 +9,8 @@ import random
 import re
 import unittest
 
-import apps.keep_testing.lib.file_status as file_status
-import tests.lib.utils_tests_lib as utils
+import apps.keep_testing.util.file_status as file_status
+import tests.util.utils_tests_lib as utils
 
 
 class TestFileInfo(utils.TestWithTmpDir):

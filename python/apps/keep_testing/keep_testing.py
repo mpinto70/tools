@@ -7,9 +7,9 @@ import re
 import time
 from typing import List
 
-import apps.lib.config_log as config_log
-import apps.keep_testing.lib.file_status as file_status
-import apps.keep_testing.lib.dir_watcher as dir_watcher
+import apps.util.config_log as config_log
+import apps.keep_testing.util.file_status as file_status
+import apps.keep_testing.util.dir_watcher as dir_watcher
 
 
 def normalize_paths(paths: List[str], exists) -> List[str]:
@@ -82,7 +82,7 @@ def execution_loop(cmds: List[str],
                 logging.error("Command failed: %s", cmd)
                 break
 
-        changed = []
+        changed: List[str] = []
         while not changed:
             while not watcher.changed():
                 time.sleep(sleep)
