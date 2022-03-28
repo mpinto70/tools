@@ -2,6 +2,7 @@
 
 # pylint: disable=protected-access
 
+from encodings import utf_8
 import hashlib
 import itertools
 import os
@@ -84,7 +85,7 @@ class TestDirInfo(utils.TestWithTmpDir):
         for subdir in self.dirs:
             os.mkdir(subdir)
         for file_path in self.files:
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf_8") as file:
                 print(file_path, file=file)
 
     def test_create_no_ignore(self):
@@ -143,7 +144,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
         for subdir in dirs:
             os.mkdir(subdir)
         for file_path in self.files:
-            with open(file_path, "w") as file:
+            with open(file_path, "w", encoding="utf_8") as file:
                 print(file_path, file=file)
 
     def test_create_file_infos(self):
