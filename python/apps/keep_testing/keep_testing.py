@@ -72,7 +72,6 @@ def execution_loop(cmds: List[str],
 
     logging.debug("Starting watching")
     dirs_files = file_status.DirsAndFiles(files, dirs, ignore)
-    watcher = dir_watcher.DirWatcher(files, dirs)
     logging.debug("Information gathered")
     while True:
         for cmd in cmds:
@@ -84,9 +83,6 @@ def execution_loop(cmds: List[str],
 
         changed: List[str] = []
         while not changed:
-            while not watcher.changed():
-                time.sleep(sleep)
-            watcher = dir_watcher.DirWatcher(files, dirs)
             begin = time.time()
             changed = dirs_files.update()
             end = time.time()
@@ -95,6 +91,10 @@ def execution_loop(cmds: List[str],
                 logging.info("Changes detected:")
                 for change in changed:
                     logging.info("- %s", change)
+                break
+            watcher = dir_watcher.DirWatcher(files, dirs)
+            while not watcher.changed():
+                time.sleep(sleep)
 
 
 def main():
