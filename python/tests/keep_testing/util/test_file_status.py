@@ -42,17 +42,14 @@ class TestFileInfo(utils.TestWithTmpDir):
     def test_create(self):
         """Test creation of FileInfo"""
         file_info = file_status.FileInfo(self.file1_path)
-        self.assertEqual(file_info._datetime, os.path.getmtime(self.file1_path))
         self.assertEqual(file_info._hash, file_status.FileInfo._calculate_hash(self.file1_path))
 
         file_info = file_status.FileInfo(self.file2_path)
-        self.assertEqual(file_info._datetime, os.path.getmtime(self.file2_path))
         self.assertEqual(file_info._hash, file_status.FileInfo._calculate_hash(self.file2_path))
 
     def test_create_non_existent(self):
         """Test creation of FileInfo with non-existent file"""
         file_info = file_status.FileInfo("non-existent")
-        self.assertEqual(file_info._datetime, 0)
         self.assertEqual(file_info._hash, "")
 
     def test_comparison(self):

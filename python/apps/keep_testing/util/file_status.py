@@ -11,17 +11,14 @@ class FileInfo:  # pylint: disable=too-few-public-methods
 
     def __init__(self, path: str):
         if os.path.isfile(path):
-            self._datetime = os.path.getmtime(path)
             self._hash = FileInfo._calculate_hash(path)
         else:
-            self._datetime = 0
             self._hash = ""
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, FileInfo):
             return NotImplemented
-        return (self._datetime == other._datetime
-                and self._hash == other._hash)
+        return self._hash == other._hash
 
     @staticmethod
     def _calculate_hash(path: str):
@@ -32,8 +29,11 @@ class FileInfo:  # pylint: disable=too-few-public-methods
         """
         hasher = hashlib.sha1()
         with open(path, "rb") as file:
-            data = file.read(65536)
-            hasher.update(data)
+            while True:
+                data = file.read(65536)
+                if not data:
+                    break
+                hasher.update(data)
         return hasher.hexdigest()
 
 
