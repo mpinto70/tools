@@ -68,6 +68,7 @@ def execution_loop(cmds: List[str],
         dirs (List[str]): directories to watch
         files (List[str]): files to watch
         ignore (List[re.Pattern]): regex applied to `dirs` and `files` to ignore
+        sleep (float): time to wait between two notifications check
     """
 
     logging.debug("Starting watching")
@@ -75,6 +76,7 @@ def execution_loop(cmds: List[str],
     logging.debug("Information gathered")
     while True:
         for cmd in cmds:
+            logging.info("Executing: %s", cmd)
             if os.system(cmd) == 0:
                 logging.info("Success: %s", cmd)
             else:
