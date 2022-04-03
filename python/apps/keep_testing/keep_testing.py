@@ -25,16 +25,16 @@ class EnterMonitor(threading.Thread):
 
     def run(self):
         """Enter a loop until user press Ctrl+C monitoring Enter"""
-        logging.debug("Start monitoring <ENTER>")
+        logging.info("Start monitoring <ENTER>")
         self._done = False
         while not self._done:
             inp, _, _ = select.select([sys.stdin], [], [], 0.5)
             if inp:
-                logging.debug("<ENTER> detected")
+                logging.info("<ENTER> detected")
                 sys.stdin.readline()
                 EnterMonitor.enter_pressed = True
 
-        logging.debug("Leaving <ENTER> monitoring")
+        logging.info("Leaving <ENTER> monitoring")
 
     def stop(self):
         """Stops the monitoring"""
@@ -113,7 +113,9 @@ def execution_loop(cmds: List[str],
                 break
 
         changed: List[str] = []
-        while not changed:
+        EnterMonitor.enter_pressed = False
+        while not changed and not EnterMonitor.enter_pressed:
+            EnterMonitor.enter_pressed = False
             begin = time.time()
             changed = dirs_files.update()
             end = time.time()
@@ -124,7 +126,7 @@ def execution_loop(cmds: List[str],
                     logging.info("- %s", change)
                 break
             watcher = dir_watcher.DirWatcher(files, dirs)
-            EnterMonitor.enter_pressed = False
+            logging.info("Monitoring dir changes and <ENTER> key presses")
             while not watcher.changed() and not EnterMonitor.enter_pressed:
                 time.sleep(sleep)
 
