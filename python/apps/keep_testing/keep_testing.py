@@ -4,12 +4,41 @@ import argparse
 import logging
 import os
 import re
+import select
+import sys
+import threading
 import time
 from typing import List
 
-import apps.util.config_log as config_log
-import apps.keep_testing.util.file_status as file_status
 import apps.keep_testing.util.dir_watcher as dir_watcher
+import apps.keep_testing.util.file_status as file_status
+import apps.util.config_log as config_log
+
+
+class EnterMonitor(threading.Thread):
+    """Montiors Enters pressed by user"""
+    enter_pressed = False
+
+    def __init__(self):
+        super().__init__()
+        self._done = False
+
+    def run(self):
+        """Enter a loop until user press Ctrl+C monitoring Enter"""
+        logging.debug("Start monitoring <ENTER>")
+        self._done = False
+        while not self._done:
+            inp, _, _ = select.select([sys.stdin], [], [], 0.5)
+            if inp:
+                logging.debug("<ENTER> detected")
+                sys.stdin.readline()
+                EnterMonitor.enter_pressed = True
+
+        logging.debug("Leaving <ENTER> monitoring")
+
+    def stop(self):
+        """Stops the monitoring"""
+        self._done = True
 
 
 def normalize_paths(paths: List[str], exists) -> List[str]:
@@ -95,15 +124,15 @@ def execution_loop(cmds: List[str],
                     logging.info("- %s", change)
                 break
             watcher = dir_watcher.DirWatcher(files, dirs)
-            while not watcher.changed():
+            EnterMonitor.enter_pressed = False
+            while not watcher.changed() and not EnterMonitor.enter_pressed:
                 time.sleep(sleep)
 
 
 def main():
     """Keep running commands watching directories"""
-
+    monitor = EnterMonitor()
     try:
-
         parser = argparse.ArgumentParser(
             description="Keep runing a command based on changes in a tree",
             formatter_class=argparse.RawTextHelpFormatter)
@@ -136,9 +165,12 @@ def main():
         files = normalize_paths(args.files, os.path.isfile)
         dirs = normalize_paths(args.dirs, os.path.isdir)
         ignore = create_regexes(args.ignore)
+        monitor.start()
         execution_loop(args.cmds, files, dirs, ignore, args.sleep)
     except KeyboardInterrupt:
         logging.info("Ctrl+C pressed")
+    monitor.stop()
+    monitor.join()
 
 
 if __name__ == "__main__":
