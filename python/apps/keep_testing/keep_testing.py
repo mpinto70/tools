@@ -147,7 +147,8 @@ def main():
         parser.add_argument("-i", "--ignore", type=str, nargs="+",
                             help="file(s) or directory(ies) to ignore (regexes)", action="extend")
         parser.add_argument("-s", "--sleep", type=float, default=0.2)
-        parser.add_argument("--debug", action="store_true", help="set log level to DEBUG")
+        parser.add_argument("--debug", action="store_true",
+                            help="set log level to DEBUG")
 
         args = parser.parse_args()
 

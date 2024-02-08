@@ -32,7 +32,8 @@ class DirWatcher:  # pylint: disable=too-few-public-methods
         if not unique_dirs:
             raise RuntimeError(f"Directories were empty for {files} / {dirs}")
 
-        self._watcher = inotify.adapters.InotifyTrees(unique_dirs, mask=self.EVENTS_WATCHED)
+        self._watcher = inotify.adapters.InotifyTrees(
+            unique_dirs, mask=self.EVENTS_WATCHED)
 
     @staticmethod
     def _unify_dirs(files: List[str], dirs: List[str]) -> List[str]:

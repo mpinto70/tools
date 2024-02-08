@@ -22,7 +22,8 @@ class TestDirWatcher(utils.TestWithTmpDir):
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
         self.dirs = [os.path.join(*el)
                      for el in itertools.product([utils.TEST_DIR_PATH], ["usr", "lib", "bin", "bin/exe"])]  # pylint: disable=line-too-long
-        self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
+        self.files = [os.path.join(*el)
+                      for el in itertools.product(dirs, files)]
         for subdir in self.dirs:
             os.mkdir(subdir)
         for subdir in dirs:
@@ -33,7 +34,8 @@ class TestDirWatcher(utils.TestWithTmpDir):
             utils.create_file(file)
 
         self.dir_not_watched = os.path.join(utils.TEST_DIR_PATH, "other")
-        self.file_not_watched = os.path.join(utils.TEST_DIR_PATH, "other", "not_watched.txt")
+        self.file_not_watched = os.path.join(
+            utils.TEST_DIR_PATH, "other", "not_watched.txt")
 
         os.mkdir(self.dir_not_watched)
         utils.create_file(self.file_not_watched)
@@ -142,7 +144,8 @@ class TestDirWatcher(utils.TestWithTmpDir):
 
         os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
         self.assertFalse(watcher.changed())
-        utils.create_file(os.path.join(self.dir_not_watched, "new_dir", "new_file.txt"))
+        utils.create_file(os.path.join(
+            self.dir_not_watched, "new_dir", "new_file.txt"))
         self.assertFalse(watcher.changed())
 
     def test_create_dir_in_created_dir(self):
