@@ -19,13 +19,18 @@ def init(debug: bool):
     wrn_cr = 208
     err_cr = 196
     fat_cr = 196
-    coloredlogs.DEFAULT_FIELD_STYLES["levelname"] = {"color": 14, "bold": False}
+    coloredlogs.DEFAULT_FIELD_STYLES["levelname"] = {
+        "color": 14, "bold": False}
     coloredlogs.DEFAULT_FIELD_STYLES["asctime"] = {"color": 13, "bold": True}
-    coloredlogs.DEFAULT_LEVEL_STYLES["debug"] = {"color": dbg_cr, "bold": False}
+    coloredlogs.DEFAULT_LEVEL_STYLES["debug"] = {
+        "color": dbg_cr, "bold": False}
     coloredlogs.DEFAULT_LEVEL_STYLES["info"] = {"color": inf_cr, "bold": False}
-    coloredlogs.DEFAULT_LEVEL_STYLES["warning"] = {"color": wrn_cr, "bold": False}
-    coloredlogs.DEFAULT_LEVEL_STYLES["error"] = {"color": err_cr, "bold": False}
-    coloredlogs.DEFAULT_LEVEL_STYLES["critical"] = {"color": fat_cr, "bold": True}
+    coloredlogs.DEFAULT_LEVEL_STYLES["warning"] = {
+        "color": wrn_cr, "bold": False}
+    coloredlogs.DEFAULT_LEVEL_STYLES["error"] = {
+        "color": err_cr, "bold": False}
+    coloredlogs.DEFAULT_LEVEL_STYLES["critical"] = {
+        "color": fat_cr, "bold": True}
     coloredlogs.install(
         level=loglevel, fmt="%(asctime)s %(levelname)-5s | %(message)s (%(filename)s:%(lineno)d)")
 

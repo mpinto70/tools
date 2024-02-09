@@ -29,16 +29,15 @@ class DirWatcher:  # pylint: disable=too-few-public-methods
         """
         unique_dirs = DirWatcher._unify_dirs(files, dirs)
 
-        if not unique_dirs:
-            raise RuntimeError(f"Directories were empty for {files} / {dirs}")
-
-        self._watcher = inotify.adapters.InotifyTrees(unique_dirs, mask=self.EVENTS_WATCHED)
+        self._watcher = inotify.adapters.InotifyTrees(
+            unique_dirs, mask=self.EVENTS_WATCHED)
 
     @staticmethod
     def _unify_dirs(files: List[str], dirs: List[str]) -> List[str]:
         """Removes directories that are subdirs of other directories in the set"""
-        unique_dirs = {os.path.dirname(file) for file in files}
-        unique_dirs = unique_dirs.union(set(dirs))
+        unique_dirs = {os.path.dirname(file)
+                       for file in files} if files else set()
+        unique_dirs = unique_dirs.union(set(dirs) if dirs else set())
         watched: list[str] = []
         for candidate in sorted(unique_dirs):
             if not watched or not candidate.startswith(watched[-1]):

@@ -135,7 +135,8 @@ class DirInfo:  # pylint: disable=too-few-public-methods
                 full_dir = os.path.join(dirpath, dirname)
                 if not _is_matched(full_dir, ignore):
                     dirs.append(full_dir)
-                    subfiles, subdirs = DirInfo._create_files_dirs(full_dir, ignore)
+                    subfiles, subdirs = DirInfo._create_files_dirs(
+                        full_dir, ignore)
                     files.update(subfiles)
                     dirs.extend(subdirs)
         return files, sorted(dirs)
@@ -196,8 +197,10 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
 
     def update(self) -> List[str]:
         """Update directory and files info and return if anything changed"""
-        file_infos = DirsAndFiles._create_file_infos(sorted(self._file_infos.keys()))
-        dir_infos = DirsAndFiles._create_dir_infos(sorted(self._dir_infos.keys()), self._ignore)
+        file_infos = DirsAndFiles._create_file_infos(
+            sorted(self._file_infos.keys()))
+        dir_infos = DirsAndFiles._create_dir_infos(
+            sorted(self._dir_infos.keys()), self._ignore)
 
         changed = _changed_files(self._file_infos, file_infos) + \
             _changed_dirs(self._dir_infos, dir_infos)
