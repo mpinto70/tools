@@ -10,6 +10,7 @@ import threading
 import time
 from typing import List
 
+import apps.keep_testing.util.config_reader as config_reader
 import apps.keep_testing.util.dir_watcher as dir_watcher
 import apps.keep_testing.util.file_status as file_status
 import apps.util.config_log as config_log
@@ -138,15 +139,37 @@ def main():
         parser = argparse.ArgumentParser(
             description="Keep runing a command based on changes in a tree",
             formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument("-c", "--cmds", type=str, nargs="+", required=True,
-                            help="command(s) to execute", action="extend")
-        parser.add_argument("-d", "--dirs", type=str, nargs="+",
-                            help="directory(ies) to watch", action="extend")
-        parser.add_argument("-f", "--files", type=str, nargs="+",
-                            help="file(s) to watch", action="extend")
-        parser.add_argument("-i", "--ignores", type=str, nargs="+",
-                            help="file(s) or directory(ies) to ignore (regexes)", action="extend")
-        parser.add_argument("-s", "--sleep", type=float, default=0.2)
+        parser.add_argument("-c", "--cmds",
+                            type=str,
+                            nargs="+",
+                            help="command(s) to execute",
+                            action="extend",
+                            default=[])
+        parser.add_argument("-d", "--dirs",
+                            type=str,
+                            nargs="+",
+                            help="directory(ies) to watch",
+                            action="extend",
+                            default=[])
+        parser.add_argument("-f", "--files",
+                            type=str,
+                            nargs="+",
+                            help="file(s) to watch",
+                            action="extend",
+                            default=[])
+        parser.add_argument("-i", "--ignores",
+                            type=str,
+                            nargs="+",
+                            help="files or directories to ignore (regexes)",
+                            action="extend",
+                            default=[])
+        parser.add_argument("-s", "--sleep",
+                            type=float,
+                            default=0.2)
+        parser.add_argument("--config",
+                            type=str,
+                            help="TOML config file that has cmds, dirs, files and ignores",
+                            default="")
         parser.add_argument("--debug", action="store_true",
                             help="set log level to DEBUG")
 
@@ -154,22 +177,28 @@ def main():
 
         config_log.init(args.debug)
 
-        logging.info("Executing %s", args.cmds)
-        if args.dirs:
-            logging.info("Watching dirs %s", args.dirs)
-        if args.files:
-            logging.info("Watching files %s", args.files)
-        if args.ignore:
-            logging.info("Ignoring %s", args.ignore)
+        config = config_reader.ConfigReader(args.config)
+        cmds = args.cmds + config.cmds()
+        dirs = args.dirs + config.dirs()
+        files = args.files + config.files()
+        ignores = args.ignores + config.ignores()
 
-        if not args.files and not args.dirs:
-            logging.critical("Either provide files or directories")
+        logging.info("Executing %s", cmds)
+        if not cmds:
+            logging.critical("You must inform commands to execute")
+            sys.exit(1)
+        if dirs:
+            logging.info("Watching dirs %s", dirs)
+        if files:
+            logging.info("Watching files %s", files)
+        if ignores:
+            logging.info("Ignoring %s", ignores)
 
-        files = normalize_paths(args.files, os.path.isfile)
-        dirs = normalize_paths(args.dirs, os.path.isdir)
-        ignore = create_regexes(args.ignore)
+        files = normalize_paths(files, os.path.isfile)
+        dirs = normalize_paths(dirs, os.path.isdir)
+        ignores = create_regexes(ignores)
         monitor.start()
-        execution_loop(args.cmds, files, dirs, ignore, args.sleep)
+        execution_loop(cmds, files, dirs, ignores, args.sleep)
     except KeyboardInterrupt:
         logging.info("Ctrl+C pressed")
     monitor.stop()

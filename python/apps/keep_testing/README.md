@@ -15,13 +15,13 @@ of the other two will be executed.
 
 You can see the options running help (`-h`):
 
-```
-$ PYTHONPATH=python python python/apps/keep_testing -h
-usage: keep_testing [-h] -c CMDS [CMDS ...] [-d DIRS [DIRS ...]] [-f FILES [FILES ...]] [-i IGNORE [IGNORE ...]] [-s SLEEP] [--debug]
+```sh
+$ PYTHONPATH=python python3 python/apps/keep_testing -h
+usage: keep_testing [-h] [-c CMDS [CMDS ...]] [-d DIRS [DIRS ...]] [-f FILES [FILES ...]] [-i IGNORES [IGNORES ...]] [-s SLEEP] [--config CONFIG] [--debug]
 
 Keep runing a command based on changes in a tree
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c CMDS [CMDS ...], --cmds CMDS [CMDS ...]
                         command(s) to execute
@@ -29,9 +29,10 @@ optional arguments:
                         directory(ies) to watch
   -f FILES [FILES ...], --files FILES [FILES ...]
                         file(s) to watch
-  -i IGNORE [IGNORE ...], --ignore IGNORE [IGNORE ...]
-                        file(s) or directory(ies) to ignore (regexes)
+  -i IGNORES [IGNORES ...], --ignores IGNORES [IGNORES ...]
+                        files or directories to ignore (regexes)
   -s SLEEP, --sleep SLEEP
+  --config CONFIG       TOML config file that has cmds, dirs, files and ignores
   --debug               set log level to DEBUG
 ```
 
@@ -46,11 +47,23 @@ run automatically.
 
 ## Options
 
-| short | long       | description                                                                                                       |
-| ----- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| `-c`  | `--cmds`   | one or more commands to be executed. Commands will be executed in the order they are entered in the command line  |
-| `-d`  | `--dirs`   | one or more directories to watch                                                                                  |
-| `-f`  | `--files`  | one or more files to watch (even if ignores match, they will be watched)                                          |
-| `-i`  | `--ignore` | one or more regex to match against files and directories to be ignored (e.g. ".*\\\\.o" will ignore object files) |
-| `-s`  | `--sleep`  | sleep time after a check of changed dirs/files or `ENTER` (default is 0.2s)                                       |
-|       | `--degub`  | if debug logging should be enabled (note that this is very verbose, because it logs messages from `inotify`)      |
+| short | long        | description                                                                                                       |
+| ----- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `-c`  | `--cmds`    | one or more commands to be executed. Commands will be executed in the order they are entered in the command line  |
+| `-d`  | `--dirs`    | one or more directories to watch                                                                                  |
+| `-f`  | `--files`   | one or more files to watch (even if ignores match, they will be watched)                                          |
+| `-i`  | `--ignores` | one or more regex to match against files and directories to be ignored (e.g. ".*\\\\.o" will ignore object files) |
+| `-s`  | `--sleep`   | sleep time after a check of changed dirs/files or `ENTER` (default is 0.2s)                                       |
+|       | `--config`  | a config file in format TOML with values for `cmds`, `dirs`, `files`, `ignores`                                   |
+|       | `--degub`   | if debug logging should be enabled (note that this is very verbose, because it logs messages from `inotify`)      |
+
+### Example TOML file
+
+Below is an example TOML configuration file:
+
+```toml
+cmds = ["PYTHONPATH=python python python/tests" ]
+dirs = ["python"]
+ignores = [".*__pycache__.*"]
+
+```
