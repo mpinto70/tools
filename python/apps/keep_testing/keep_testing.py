@@ -144,7 +144,7 @@ def main():
                             help="directory(ies) to watch", action="extend")
         parser.add_argument("-f", "--files", type=str, nargs="+",
                             help="file(s) to watch", action="extend")
-        parser.add_argument("-i", "--ignore", type=str, nargs="+",
+        parser.add_argument("-i", "--ignores", type=str, nargs="+",
                             help="file(s) or directory(ies) to ignore (regexes)", action="extend")
         parser.add_argument("-s", "--sleep", type=float, default=0.2)
         parser.add_argument("--debug", action="store_true",
