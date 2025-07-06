@@ -12,7 +12,7 @@ tree in `python/apps`.
 To run Python unit tests:
 
 ```bash
-PYTHONPATH=python python python/tests
+PYTHONPATH=python python3 python/tests
 ```
 
 ## Tools

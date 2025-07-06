@@ -79,7 +79,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         return self._files == other._files and self._dirs == other._dirs
 
     def changed(self, other: object) -> List[str]:
-        """ Return a list of changed files and directories
+        """Return a list of changed files and directories
 
         Args:
             other (object): the other object
@@ -106,8 +106,9 @@ class DirInfo:  # pylint: disable=too-few-public-methods
         return result
 
     @staticmethod
-    def _create_files_dirs(path: str,
-                           ignore: List[re.Pattern]) -> Tuple[Dict[str, FileInfo], List[str]]:
+    def _create_files_dirs(
+        path: str, ignore: List[re.Pattern]
+    ) -> Tuple[Dict[str, FileInfo], List[str]]:
         """Create a dict of files from the tree in path
 
         Args:
@@ -118,6 +119,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
             (Dict[str, FileInfo], List[str]): dictionary mapping file names to FileInfo and
                 a list of directories
         """
+
         def _is_matched(full_file: str, ignore: List[re.Pattern]):
             for ign in ignore:
                 if ign.fullmatch(full_file):
@@ -135,8 +137,7 @@ class DirInfo:  # pylint: disable=too-few-public-methods
                 full_dir = os.path.join(dirpath, dirname)
                 if not _is_matched(full_dir, ignore):
                     dirs.append(full_dir)
-                    subfiles, subdirs = DirInfo._create_files_dirs(
-                        full_dir, ignore)
+                    subfiles, subdirs = DirInfo._create_files_dirs(full_dir, ignore)
                     files.update(subfiles)
                     dirs.extend(subdirs)
         return files, sorted(dirs)
@@ -197,13 +198,14 @@ class DirsAndFiles:  # pylint: disable=too-few-public-methods
 
     def update(self) -> List[str]:
         """Update directory and files info and return if anything changed"""
-        file_infos = DirsAndFiles._create_file_infos(
-            sorted(self._file_infos.keys()))
+        file_infos = DirsAndFiles._create_file_infos(sorted(self._file_infos.keys()))
         dir_infos = DirsAndFiles._create_dir_infos(
-            sorted(self._dir_infos.keys()), self._ignore)
+            sorted(self._dir_infos.keys()), self._ignore
+        )
 
-        changed = _changed_files(self._file_infos, file_infos) + \
-            _changed_dirs(self._dir_infos, dir_infos)
+        changed = _changed_files(self._file_infos, file_infos) + _changed_dirs(
+            self._dir_infos, dir_infos
+        )
         self._file_infos = file_infos
         self._dir_infos = dir_infos
 

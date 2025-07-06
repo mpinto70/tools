@@ -15,11 +15,13 @@ of the other two will be executed.
 
 You can see the options running help (`-h`):
 
-```sh
+```text
 $ PYTHONPATH=python python3 python/apps/keep_testing -h
-usage: keep_testing [-h] [-c CMDS [CMDS ...]] [-d DIRS [DIRS ...]] [-f FILES [FILES ...]] [-i IGNORES [IGNORES ...]] [-s SLEEP] [--config CONFIG] [--debug]
+usage: keep_testing [-h] [-c CMDS [CMDS ...]] [-d DIRS [DIRS ...]]
+                    [-f FILES [FILES ...]] [-i IGNORES [IGNORES ...]]
+                    [-s SLEEP] [--config CONFIG] [-1] [--debug]
 
-Keep runing a command based on changes in a tree
+Keep running a command based on changes in a tree
 
 options:
   -h, --help            show this help message and exit
@@ -32,7 +34,8 @@ options:
   -i IGNORES [IGNORES ...], --ignores IGNORES [IGNORES ...]
                         files or directories to ignore (regexes)
   -s SLEEP, --sleep SLEEP
-  --config CONFIG       TOML config file that has cmds, dirs, files and ignores
+  --config CONFIG       use a TOML config file with cmds, dirs, files and ignores
+  -1, --once            execute only once and exit immediately
   --debug               set log level to DEBUG
 ```
 
@@ -40,9 +43,13 @@ To run unit tests in this project while you make changes, you can run the follow
 
 ```sh
 keep-testing -c "PYTHONPATH=python python python/tests" -d python -i ".*__pycache__.*"
+
+# or
+
+keep-testing --config python/tests.toml
 ```
 
-Then, every time you change/craete/delete a file or directory (that is not ignored), the tests will
+Then, every time you change/create/delete a file or directory (that is not ignored), the tests will
 run automatically.
 
 ## Options
@@ -52,10 +59,11 @@ run automatically.
 | `-c`  | `--cmds`    | one or more commands to be executed. Commands will be executed in the order they are entered in the command line  |
 | `-d`  | `--dirs`    | one or more directories to watch                                                                                  |
 | `-f`  | `--files`   | one or more files to watch (even if ignores match, they will be watched)                                          |
-| `-i`  | `--ignores` | one or more regex to match against files and directories to be ignored (e.g. ".*\\\\.o" will ignore object files) |
+| `-i`  | `--ignores` | one or more regex to match against files and directories to be ignored (e.g. `".*\\.o"` will ignore object files) |
 | `-s`  | `--sleep`   | sleep time after a check of changed dirs/files or `ENTER` (default is 0.2s)                                       |
 |       | `--config`  | a config file in format TOML with values for `cmds`, `dirs`, `files`, `ignores`                                   |
-|       | `--degub`   | if debug logging should be enabled (note that this is very verbose, because it logs messages from `inotify`)      |
+| `-1`  | `--once`    | if set, the commands are executed only once                                                                       |
+|       | `--debug`   | if debug logging should be enabled (note that this is very verbose, because it logs messages from `inotify`)      |
 
 ### Example TOML file
 
@@ -64,6 +72,6 @@ Below is an example TOML configuration file:
 ```toml
 cmds = ["PYTHONPATH=python python python/tests" ]
 dirs = ["python"]
+files = ["python/tests/__main__.py"]
 ignores = [".*__pycache__.*"]
-
 ```

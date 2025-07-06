@@ -8,6 +8,7 @@ import shutil
 import unittest
 
 import apps.keep_testing.util.dir_watcher as dir_watcher
+
 import tests.util.utils_tests_lib as utils
 
 
@@ -17,13 +18,20 @@ class TestDirWatcher(utils.TestWithTmpDir):
     def setUp(self) -> None:
         super().setUp()
 
-        dirs = [os.path.join(*el)
-                for el in itertools.product([utils.TEST_DIR_PATH], ["bin", "build", "src", "src/app"])]  # pylint: disable=line-too-long
+        dirs = [
+            os.path.join(*el)
+            for el in itertools.product(
+                [utils.TEST_DIR_PATH], ["bin", "build", "src", "src/app"]
+            )
+        ]
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
-        self.dirs = [os.path.join(*el)
-                     for el in itertools.product([utils.TEST_DIR_PATH], ["usr", "lib", "bin", "bin/exe"])]  # pylint: disable=line-too-long
-        self.files = [os.path.join(*el)
-                      for el in itertools.product(dirs, files)]
+        self.dirs = [
+            os.path.join(*el)
+            for el in itertools.product(
+                [utils.TEST_DIR_PATH], ["usr", "lib", "bin", "bin/exe"]
+            )
+        ]
+        self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
         for subdir in self.dirs:
             os.mkdir(subdir)
         for subdir in dirs:
@@ -35,7 +43,8 @@ class TestDirWatcher(utils.TestWithTmpDir):
 
         self.dir_not_watched = os.path.join(utils.TEST_DIR_PATH, "other")
         self.file_not_watched = os.path.join(
-            utils.TEST_DIR_PATH, "other", "not_watched.txt")
+            utils.TEST_DIR_PATH, "other", "not_watched.txt"
+        )
 
         os.mkdir(self.dir_not_watched)
         utils.create_file(self.file_not_watched)
@@ -81,7 +90,7 @@ class TestDirWatcher(utils.TestWithTmpDir):
             self.assertFalse(watcher.changed(), msg=file)
 
     def test_create_file(self):
-        """Test that when a file is craeted returns True"""
+        """Test that when a file is created returns True"""
         watcher = dir_watcher.DirWatcher(self.files, self.dirs)
 
         for adir in self.dirs:
@@ -104,7 +113,7 @@ class TestDirWatcher(utils.TestWithTmpDir):
         self.assertFalse(watcher.changed(), msg=self.file_not_watched)
 
     def test_create_dir(self):
-        """Test that when a directory is craeted returns True"""
+        """Test that when a directory is created returns True"""
         watcher = dir_watcher.DirWatcher(self.files, self.dirs)
 
         for adir in self.dirs:
@@ -131,7 +140,7 @@ class TestDirWatcher(utils.TestWithTmpDir):
         self.assertFalse(watcher.changed(), msg=self.file_not_watched)
 
     def test_create_file_in_created_dir(self):
-        """Test that when a file is craeted under a created dir returns True"""
+        """Test that when a file is created under a created dir returns True"""
         watcher = dir_watcher.DirWatcher([], self.dirs)
 
         for adir in self.dirs:
@@ -144,12 +153,11 @@ class TestDirWatcher(utils.TestWithTmpDir):
 
         os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
         self.assertFalse(watcher.changed())
-        utils.create_file(os.path.join(
-            self.dir_not_watched, "new_dir", "new_file.txt"))
+        utils.create_file(os.path.join(self.dir_not_watched, "new_dir", "new_file.txt"))
         self.assertFalse(watcher.changed())
 
     def test_create_dir_in_created_dir(self):
-        """Test that when a dir is craeted under a created dir returns True"""
+        """Test that when a dir is created under a created dir returns True"""
         watcher = dir_watcher.DirWatcher([], self.dirs)
 
         for adir in self.dirs:

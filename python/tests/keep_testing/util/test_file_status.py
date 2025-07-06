@@ -10,6 +10,7 @@ import re
 import unittest
 
 import apps.keep_testing.util.file_status as file_status
+
 import tests.util.utils_tests_lib as utils
 
 
@@ -30,26 +31,30 @@ class TestFileInfo(utils.TestWithTmpDir):
     def test_hash(self):
         """Test that hash function calculates sha1"""
         hasher = hashlib.sha1()
-        hasher.update(str.encode(f"{self.file1_content}\n", ))
+        hasher.update(str.encode(f"{self.file1_content}\n"))
         expected_hash = hasher.hexdigest()
-        self.assertEqual(file_status.FileInfo._calculate_hash(
-            self.file1_path), expected_hash)
+        self.assertEqual(
+            file_status.FileInfo._calculate_hash(self.file1_path), expected_hash
+        )
 
         hasher = hashlib.sha1()
-        hasher.update(str.encode(f"{self.file2_content}\n", ))
+        hasher.update(str.encode(f"{self.file2_content}\n"))
         expected_hash = hasher.hexdigest()
-        self.assertEqual(file_status.FileInfo._calculate_hash(
-            self.file2_path), expected_hash)
+        self.assertEqual(
+            file_status.FileInfo._calculate_hash(self.file2_path), expected_hash
+        )
 
     def test_create(self):
         """Test creation of FileInfo"""
         file_info = file_status.FileInfo(self.file1_path)
         self.assertEqual(
-            file_info._hash, file_status.FileInfo._calculate_hash(self.file1_path))
+            file_info._hash, file_status.FileInfo._calculate_hash(self.file1_path)
+        )
 
         file_info = file_status.FileInfo(self.file2_path)
         self.assertEqual(
-            file_info._hash, file_status.FileInfo._calculate_hash(self.file2_path))
+            file_info._hash, file_status.FileInfo._calculate_hash(self.file2_path)
+        )
 
     def test_create_non_existent(self):
         """Test creation of FileInfo with non-existent file"""
@@ -79,10 +84,13 @@ class TestDirInfo(utils.TestWithTmpDir):
         super().setUp()
         dirs = ["bin", "build", "src"]
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
-        self.dirs = [os.path.join(*element)
-                     for element in itertools.product([utils.TEST_DIR_PATH], dirs)]
-        self.files = [os.path.join(*element)
-                      for element in itertools.product(self.dirs, files)]
+        self.dirs = [
+            os.path.join(*element)
+            for element in itertools.product([utils.TEST_DIR_PATH], dirs)
+        ]
+        self.files = [
+            os.path.join(*element) for element in itertools.product(self.dirs, files)
+        ]
         for subdir in self.dirs:
             os.mkdir(subdir)
         for file_path in self.files:
@@ -93,8 +101,7 @@ class TestDirInfo(utils.TestWithTmpDir):
         """Test creation of DirInfo without ignore."""
         dir_info = file_status.DirInfo(utils.TEST_DIR_PATH, [])
         self.assertEqual(dir_info._path, utils.TEST_DIR_PATH)
-        expected_files = {file: file_status.FileInfo(
-            file) for file in self.files}
+        expected_files = {file: file_status.FileInfo(file) for file in self.files}
         self.assertEqual(dir_info._files, expected_files)
 
     def test_create_with_ignore(self):
@@ -102,14 +109,22 @@ class TestDirInfo(utils.TestWithTmpDir):
         os.mkdir(os.path.join(utils.TEST_DIR_PATH, "build", "ignored"))
 
         dir_info = file_status.DirInfo(
-            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build\b.*")])
+            utils.TEST_DIR_PATH,
+            [
+                re.compile(r".*1.txt"),
+                re.compile(r".*/build\b.*"),
+            ],
+        )
         self.assertEqual(dir_info._path, utils.TEST_DIR_PATH)
 
-        filtered = list(filter(lambda file: not (file.endswith(
-            "file1.txt") or "build" in file), self.files))
+        filtered = list(
+            filter(
+                lambda file: not (file.endswith("file1.txt") or "build" in file),
+                self.files,
+            )
+        )
 
-        expected_files = {file: file_status.FileInfo(
-            file) for file in filtered}
+        expected_files = {file: file_status.FileInfo(file) for file in filtered}
         self.assertEqual(dir_info._files, expected_files)
         # dirs[1] is build that is ignored
         self.assertEqual(dir_info._dirs, [self.dirs[0], self.dirs[2]])
@@ -117,12 +132,22 @@ class TestDirInfo(utils.TestWithTmpDir):
     def test_create_with_subdir_in_ignored_dir(self):
         """Test creation of DirInfo with ignore."""
         dir_info_0 = file_status.DirInfo(
-            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+            utils.TEST_DIR_PATH,
+            [
+                re.compile(r".*1.txt"),
+                re.compile(r".*/build/.*"),
+            ],
+        )
 
         os.mkdir(os.path.join(self.dirs[1], "new_dir"))  # build is ignored
 
         dir_info_1 = file_status.DirInfo(
-            utils.TEST_DIR_PATH, [re.compile(r".*1.txt"), re.compile(r".*/build/.*")])
+            utils.TEST_DIR_PATH,
+            [
+                re.compile(r".*1.txt"),
+                re.compile(r".*/build/.*"),
+            ],
+        )
 
         self.assertEqual(dir_info_0, dir_info_1)
 
@@ -132,13 +157,16 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def setUp(self) -> None:
         super().setUp()
-        dirs = [os.path.join(*el)
-                for el in itertools.product([utils.TEST_DIR_PATH], ["bin", "build", "src"])]
+        dirs = [
+            os.path.join(*el)
+            for el in itertools.product([utils.TEST_DIR_PATH], ["bin", "build", "src"])
+        ]
         files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
-        self.dirs = [os.path.join(*el)
-                     for el in itertools.product([utils.TEST_DIR_PATH], ["usr", "lib"])]
-        self.files = [os.path.join(*el)
-                      for el in itertools.product(dirs, files)]
+        self.dirs = [
+            os.path.join(*el)
+            for el in itertools.product([utils.TEST_DIR_PATH], ["usr", "lib"])
+        ]
+        self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
         self.ignores = [
             re.compile(r".*ignore.*"),
             re.compile(r".*/usr/.*"),
@@ -159,19 +187,15 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def test_create_dir_infos(self):
         """Test create_dir_infos create DirInfo dict"""
-        dir_infos = file_status.DirsAndFiles._create_dir_infos(
-            self.dirs, self.ignores)
-        expected = {adir: file_status.DirInfo(
-            adir, self.ignores) for adir in self.dirs}
+        dir_infos = file_status.DirsAndFiles._create_dir_infos(self.dirs, self.ignores)
+        expected = {adir: file_status.DirInfo(adir, self.ignores) for adir in self.dirs}
         self.assertEqual(dir_infos, expected)
 
     def test_create(self):
         """Test creation of object"""
-        dirs_and_files = file_status.DirsAndFiles(
-            self.files, self.dirs, self.ignores)
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
         file_infos = file_status.DirsAndFiles._create_file_infos(self.files)
-        dir_infos = file_status.DirsAndFiles._create_dir_infos(
-            self.dirs, self.ignores)
+        dir_infos = file_status.DirsAndFiles._create_dir_infos(self.dirs, self.ignores)
 
         self.assertEqual(dirs_and_files._file_infos, file_infos)
         self.assertEqual(dirs_and_files._dir_infos, dir_infos)
@@ -179,8 +203,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def test_change_in_files(self):
         """Test change in files are reported as True"""
-        dirs_and_files = file_status.DirsAndFiles(
-            self.files, self.dirs, self.ignores)
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
         self.assertFalse(dirs_and_files.update())
         for file in self.files:
             utils.change_file(file)
@@ -190,8 +213,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def test_change_in_ignored_files(self):
         """Test change in ignored files/dirs are reported as False"""
-        dirs_and_files = file_status.DirsAndFiles(
-            self.files, self.dirs, self.ignores)
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
 
         # /usr/ is ignored
         utils.change_file(os.path.join(self.dirs[0], "some-file"))
@@ -201,8 +223,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def test_creation_of_new_files(self):
         """Test creation of files are reported as True"""
-        dirs_and_files = file_status.DirsAndFiles(
-            self.files, self.dirs, self.ignores)
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
 
         # /lib/ is not ignored
         utils.change_file(os.path.join(self.dirs[1], "some-file"))
@@ -210,8 +231,7 @@ class TestDirsAndFilesInfo(utils.TestWithTmpDir):
 
     def test_creation_of_new_dirs(self):
         """Test creation of directories are reported as True"""
-        dirs_and_files = file_status.DirsAndFiles(
-            self.files, self.dirs, self.ignores)
+        dirs_and_files = file_status.DirsAndFiles(self.files, self.dirs, self.ignores)
 
         # /lib/ is not ignored
         os.mkdir(os.path.join(self.dirs[1], "some-dir"))

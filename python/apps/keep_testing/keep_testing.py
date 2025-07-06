@@ -17,7 +17,8 @@ import apps.util.config_log as config_log
 
 
 class EnterMonitor(threading.Thread):
-    """Montiors Enters pressed by user"""
+    """Monitors Enters pressed by user"""
+
     enter_pressed = False
 
     def __init__(self):
@@ -42,8 +43,8 @@ class EnterMonitor(threading.Thread):
         self._done = True
 
 
-def normalize_paths(paths: List[str], exists) -> List[str]:
-    """Normilize all paths to get full path
+def __normalize_paths(paths: List[str], exists) -> List[str]:
+    """Normalize all paths to get full path
 
     Args:
         paths (List[str]): original paths
@@ -53,7 +54,7 @@ def normalize_paths(paths: List[str], exists) -> List[str]:
         RuntimeError: if path is not found
 
     Returns:
-        List[str]: normilized paths
+        List[str]: normalized paths
     """
     logging.debug("normalize_paths(%s)", paths)
     if not paths:
@@ -67,7 +68,7 @@ def normalize_paths(paths: List[str], exists) -> List[str]:
     return result
 
 
-def create_regexes(texts: List[str]) -> List[re.Pattern]:
+def __create_regexes(texts: List[str]) -> List[re.Pattern]:
     """Compiles regular expressions
 
     Args:
@@ -85,13 +86,39 @@ def create_regexes(texts: List[str]) -> List[re.Pattern]:
     return result
 
 
-def execution_loop(cmds: List[str],
-                   files: List[str],
-                   dirs: List[str],
-                   ignore: List[re.Pattern],
-                   sleep: float):
-    """Loops indefinetely executing `cmds` and checking `dirs` and `files` for changes
-    except the ones that match `ignore`
+def __execute_cmds(cmds: List[str]) -> bool:
+    """Executes commands and returns True if all succeeded, False otherwise
+
+    Args:
+        cmds (List[str]): commands to execute
+
+    Returns:
+        bool: True if all commands succeeded, False otherwise
+    """
+    logging.debug("execute_cmds(%s)", cmds)
+    for cmd in cmds:
+        logging.info("Executing: %s", cmd)
+        if os.system(cmd) == 0:
+            logging.info("Success: %s", cmd)
+        else:
+            failed = True
+            logging.error("Command failed: %s", cmd)
+            return False
+    return True
+
+
+def __execution_loop(
+    monitor: EnterMonitor,
+    cmds: List[str],
+    files: List[str],
+    dirs: List[str],
+    ignore: List[re.Pattern],
+    sleep: float,
+    only_once: bool,
+) -> int:
+    """Loops executing `cmds` and checking `dirs` and `files` for changes
+    except the ones that match `ignore`. If `only_once` is True, it will
+    execute only once.
 
     Args:
         cmds (List[str]): commands to execute
@@ -99,19 +126,21 @@ def execution_loop(cmds: List[str],
         files (List[str]): files to watch
         ignore (List[re.Pattern]): regex applied to `dirs` and `files` to ignore
         sleep (float): time to wait between two notifications check
+        only_once (bool): if True, execute only once and exit
     """
 
+    if only_once:
+        if __execute_cmds(cmds):
+            return 0
+        else:
+            return 1
+
+    monitor.start()
     logging.debug("Starting watching")
     dirs_files = file_status.DirsAndFiles(files, dirs, ignore)
     logging.debug("Information gathered")
     while True:
-        for cmd in cmds:
-            logging.info("Executing: %s", cmd)
-            if os.system(cmd) == 0:
-                logging.info("Success: %s", cmd)
-            else:
-                logging.error("Command failed: %s", cmd)
-                break
+        __execute_cmds(cmds)
 
         changed: List[str] = []
         EnterMonitor.enter_pressed = False
@@ -135,43 +164,64 @@ def execution_loop(cmds: List[str],
 def main():
     """Keep running commands watching directories"""
     monitor = EnterMonitor()
+    res = 0
     try:
         parser = argparse.ArgumentParser(
-            description="Keep runing a command based on changes in a tree",
-            formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument("-c", "--cmds",
-                            type=str,
-                            nargs="+",
-                            help="command(s) to execute",
-                            action="extend",
-                            default=[])
-        parser.add_argument("-d", "--dirs",
-                            type=str,
-                            nargs="+",
-                            help="directory(ies) to watch",
-                            action="extend",
-                            default=[])
-        parser.add_argument("-f", "--files",
-                            type=str,
-                            nargs="+",
-                            help="file(s) to watch",
-                            action="extend",
-                            default=[])
-        parser.add_argument("-i", "--ignores",
-                            type=str,
-                            nargs="+",
-                            help="files or directories to ignore (regexes)",
-                            action="extend",
-                            default=[])
-        parser.add_argument("-s", "--sleep",
-                            type=float,
-                            default=0.2)
-        parser.add_argument("--config",
-                            type=str,
-                            help="TOML config file that has cmds, dirs, files and ignores",
-                            default="")
-        parser.add_argument("--debug", action="store_true",
-                            help="set log level to DEBUG")
+            description="Keep running a command based on changes in a tree",
+            formatter_class=argparse.RawTextHelpFormatter,
+        )
+        parser.add_argument(
+            "-c",
+            "--cmds",
+            type=str,
+            nargs="+",
+            help="command(s) to execute",
+            action="extend",
+            default=[],
+        )
+        parser.add_argument(
+            "-d",
+            "--dirs",
+            type=str,
+            nargs="+",
+            help="directory(ies) to watch",
+            action="extend",
+            default=[],
+        )
+        parser.add_argument(
+            "-f",
+            "--files",
+            type=str,
+            nargs="+",
+            help="file(s) to watch",
+            action="extend",
+            default=[],
+        )
+        parser.add_argument(
+            "-i",
+            "--ignores",
+            type=str,
+            nargs="+",
+            help="files or directories to ignore (regexes)",
+            action="extend",
+            default=[],
+        )
+        parser.add_argument("-s", "--sleep", type=float, default=0.2)
+        parser.add_argument(
+            "--config",
+            type=str,
+            help="use a TOML config file with cmds, dirs, files and ignores",
+            default="",
+        )
+        parser.add_argument(
+            "-1",
+            "--once",
+            action="store_true",
+            help="execute only once and exit immediately",
+        )
+        parser.add_argument(
+            "--debug", action="store_true", help="set log level to DEBUG"
+        )
 
         args = parser.parse_args()
 
@@ -182,6 +232,7 @@ def main():
         dirs = args.dirs + config.dirs()
         files = args.files + config.files()
         ignores = args.ignores + config.ignores()
+        only_once = args.once
 
         logging.info("Executing %s", cmds)
         if not cmds:
@@ -194,15 +245,21 @@ def main():
         if ignores:
             logging.info("Ignoring %s", ignores)
 
-        files = normalize_paths(files, os.path.isfile)
-        dirs = normalize_paths(dirs, os.path.isdir)
-        ignores = create_regexes(ignores)
-        monitor.start()
-        execution_loop(cmds, files, dirs, ignores, args.sleep)
+        files = __normalize_paths(files, os.path.isfile)
+        dirs = __normalize_paths(dirs, os.path.isdir)
+        ignores = __create_regexes(ignores)
+        res = __execution_loop(
+            monitor, cmds, files, dirs, ignores, args.sleep, only_once
+        )
     except KeyboardInterrupt:
         logging.info("Ctrl+C pressed")
-    monitor.stop()
-    monitor.join()
+    if monitor.is_alive():
+        logging.info("Stopping <ENTER> monitoring")
+        monitor.stop()
+        monitor.join()
+
+    logging.info("Bye")
+    sys(exit(res))
 
 
 if __name__ == "__main__":

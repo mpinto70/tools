@@ -1,12 +1,14 @@
 """A reader for configuration in TOML files"""
 
 import os
-import tomllib
 from typing import List
 
+import tomllib
 
-class ConfigReader:  # pylint: disable=too-few-public-methods
+
+class ConfigReader:
     """Read TOML configuration file with execution parameters"""
+
     CMDS = "cmds"
     DIRS = "dirs"
     FILES = "files"
@@ -23,8 +25,7 @@ class ConfigReader:  # pylint: disable=too-few-public-methods
             return
 
         if not os.path.isfile(config_file):
-            raise FileNotFoundError(
-                f"Configuration file not found: {config_file}")
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
 
         with open(config_file, "rb") as f:
             self._data = tomllib.load(f)

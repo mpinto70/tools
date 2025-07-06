@@ -6,6 +6,7 @@ import os
 import unittest
 
 import apps.keep_testing.util.config_reader as config_reader
+
 import tests.util.utils_tests_lib as utils
 
 
@@ -29,8 +30,7 @@ class TestConfigReader(utils.TestWithTmpDir):
         reader = config_reader.ConfigReader(self.file_path)
         self.assertEqual(reader.cmds(), ["ls -l", "echo 'command 1'"])
         self.assertEqual(reader.dirs(), ["/path/to/dir1", "/path/to/dir2"])
-        self.assertEqual(reader.files(), [
-                         "path/to/file1.txt", "/path/to/file2.txt"])
+        self.assertEqual(reader.files(), ["path/to/file1.txt", "/path/to/file2.txt"])
         self.assertEqual(reader.ignores(), [".*\\.git", ".*\\.idea"])
 
     def test_empty_file(self):
