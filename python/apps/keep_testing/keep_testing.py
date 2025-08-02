@@ -99,9 +99,8 @@ def __execute_cmds(cmds: List[str]) -> bool:
     for cmd in cmds:
         logging.info("Executing: %s", cmd)
         if os.system(cmd) == 0:
-            logging.info("Success: %s", cmd)
+            logging.log(config_log.OK_LEVEL, "Success: %s", cmd)
         else:
-            failed = True
             logging.error("Command failed: %s", cmd)
             return False
     return True
