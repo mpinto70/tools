@@ -209,8 +209,10 @@ def main():
         parser.add_argument(
             "--config",
             type=str,
+            nargs="+",
             help="use a TOML config file with cmds, dirs, files and ignores",
-            default="",
+            action="extend",
+            default=[],
         )
         parser.add_argument(
             "-1",
@@ -226,11 +228,11 @@ def main():
 
         config_log.init(args.debug)
 
-        config = config_reader.ConfigReader(args.config)
-        cmds = args.cmds + config.cmds()
-        dirs = args.dirs + config.dirs()
-        files = args.files + config.files()
-        ignores = args.ignores + config.ignores()
+        configs = [config_reader.ConfigReader(config) for config in args.config]
+        cmds = args.cmds + [cfg for config in configs for cfg in config.cmds()]
+        dirs = args.dirs + [cfg for config in configs for cfg in config.dirs()]
+        files = args.files + [cfg for config in configs for cfg in config.files()]
+        ignores = args.ignores + [cfg for config in configs for cfg in config.ignores()]
         only_once = args.once
 
         logging.info("Executing %s", cmds)
