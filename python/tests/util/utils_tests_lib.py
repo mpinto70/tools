@@ -2,10 +2,12 @@
 
 import os
 import shutil
+import time
 import unittest
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TEST_DIR_PATH = os.path.join(SCRIPT_DIR_PATH, "tmp")
+_SLEEP_SIZE = 0.05
 
 
 class TestWithTmpDir(unittest.TestCase):
@@ -25,9 +27,31 @@ def create_file(filename: str):
     """Creates a file with some content"""
     with open(filename, "w") as file:
         print("more content", file=file)
+        file.close()
+    time.sleep(_SLEEP_SIZE)
 
 
 def change_file(filename: str):
     """Changes the contents of file"""
     with open(filename, "a") as file:
         print("more content", file=file)
+        file.close()
+    time.sleep(_SLEEP_SIZE)
+
+
+def remove_file(filename: str):
+    """Remove file"""
+    os.remove(filename)
+    time.sleep(_SLEEP_SIZE)
+
+
+def create_dir(new_dir: str):
+    """Creates a directory"""
+    os.mkdir(new_dir)
+    time.sleep(_SLEEP_SIZE)
+
+
+def remove_dir(dir_path: str):
+    """Remove directory"""
+    os.rmdir(dir_path)
+    time.sleep(_SLEEP_SIZE)

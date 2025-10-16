@@ -109,9 +109,8 @@ def __execute_cmds(cmds: List[str]) -> bool:
 def __execution_loop(
     monitor: EnterMonitor,
     cmds: List[str],
-    files: List[str],
-    dirs: List[str],
-    ignore: List[re.Pattern],
+    dirs_files: file_status.DirsAndFiles,
+    watcher: dir_watcher.DirWatcher,
     sleep: float,
     only_once: bool,
 ) -> int:
@@ -136,8 +135,7 @@ def __execution_loop(
 
     monitor.start()
     logging.debug("Starting watching")
-    dirs_files = file_status.DirsAndFiles(files, dirs, ignore)
-    logging.debug("Information gathered")
+    watcher.start()
     while True:
         __execute_cmds(cmds)
 
@@ -154,7 +152,6 @@ def __execution_loop(
                 for change in changed:
                     logging.info("- %s", change)
                 break
-            watcher = dir_watcher.DirWatcher(files, dirs)
             logging.info("Monitoring dir changes and <ENTER> key presses")
             while not watcher.changed() and not EnterMonitor.enter_pressed:
                 time.sleep(sleep)
@@ -228,11 +225,14 @@ def main():
 
         config_log.init(args.debug)
 
-        configs = [config_reader.ConfigReader(config) for config in args.config]
+        configs = [config_reader.ConfigReader(
+            config) for config in args.config]
         cmds = args.cmds + [cfg for config in configs for cfg in config.cmds()]
         dirs = args.dirs + [cfg for config in configs for cfg in config.dirs()]
-        files = args.files + [cfg for config in configs for cfg in config.files()]
-        ignores = args.ignores + [cfg for config in configs for cfg in config.ignores()]
+        files = args.files + \
+            [cfg for config in configs for cfg in config.files()]
+        ignores = args.ignores + \
+            [cfg for config in configs for cfg in config.ignores()]
         only_once = args.once
 
         logging.info("Executing %s", cmds)
@@ -249,15 +249,21 @@ def main():
         files = __normalize_paths(files, os.path.isfile)
         dirs = __normalize_paths(dirs, os.path.isdir)
         ignores = __create_regexes(ignores)
-        res = __execution_loop(
-            monitor, cmds, files, dirs, ignores, args.sleep, only_once
-        )
+
+        dirs_files = file_status.DirsAndFiles(files, dirs, ignores)
+        logging.debug("Information gathered")
+        watcher = dir_watcher.DirWatcher(files, dirs)
+        res = __execution_loop(monitor, cmds, dirs_files,
+                               watcher, args.sleep, only_once)
     except KeyboardInterrupt:
         logging.info("Ctrl+C pressed")
+
     if monitor.is_alive():
         logging.info("Stopping <ENTER> monitoring")
         monitor.stop()
         monitor.join()
+
+    watcher.stop()
 
     logging.info("Bye")
     sys(exit(res))
