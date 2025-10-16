@@ -4,6 +4,7 @@
 
 import itertools
 import os
+import time
 import shutil
 import unittest
 
@@ -31,15 +32,19 @@ class TestDirWatcher(utils.TestWithTmpDir):
                 [utils.TEST_DIR_PATH], ["usr", "lib", "bin", "bin/exe"]
             )
         ]
-        self.files = [os.path.join(*el) for el in itertools.product(dirs, files)]
+        self.files = [os.path.join(*el)
+                      for el in itertools.product(dirs, files)]
+
         for subdir in self.dirs:
             os.mkdir(subdir)
         for subdir in dirs:
             if not os.path.isdir(subdir):
                 os.mkdir(subdir)
 
-        for file in self.files:
-            utils.create_file(file)
+        for filename in self.files:
+            # create file
+            with open(filename, "w") as file:
+                print(f"content for {filename}", file=file)
 
         self.dir_not_watched = os.path.join(utils.TEST_DIR_PATH, "other")
         self.file_not_watched = os.path.join(
@@ -49,8 +54,17 @@ class TestDirWatcher(utils.TestWithTmpDir):
         os.mkdir(self.dir_not_watched)
         utils.create_file(self.file_not_watched)
 
+        time.sleep(0.2)
+
+        self.watcher = dir_watcher.DirWatcher(self.files, self.dirs)
+        self.watcher.start()
+
     def tearDown(self) -> None:
+        self.watcher.stop()
         shutil.rmtree(utils.TEST_DIR_PATH)
+
+    def _changed(self) -> bool:
+        return self.watcher.changed()
 
     def test_unify_dirs(self):
         """Test that unify_dirs creates a list with directories without repetition"""
@@ -66,112 +80,110 @@ class TestDirWatcher(utils.TestWithTmpDir):
 
     def test_no_change(self):
         """Test that when nothing is changed returns False"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-        self.assertFalse(watcher.changed())
+        self.assertFalse(self._changed())
 
     def test_change_file(self):
         """Test that when a file is changed returns True"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-
         for file in self.files:
             utils.change_file(file)
-            self.assertTrue(watcher.changed(), msg=file)
+            self.assertTrue(self._changed(), msg=file)
 
         utils.change_file(self.file_not_watched)
-        self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+        self.assertFalse(self._changed(), msg=self.file_not_watched)
 
     def test_no_change_after_check(self):
         """Test that after checking for change, the next check is False"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-
         for file in self.files:
             utils.change_file(file)
-            self.assertTrue(watcher.changed(), msg=file)
-            self.assertFalse(watcher.changed(), msg=file)
+            self.assertTrue(self._changed(), msg=file)
+            self.assertFalse(self._changed(), msg=file)
 
     def test_create_file(self):
         """Test that when a file is created returns True"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-
         for adir in self.dirs:
             new_file = os.path.join(adir, "new_file.txt")
             utils.create_file(new_file)
-            self.assertTrue(watcher.changed())
+            self.assertTrue(self._changed())
 
         utils.create_file(os.path.join(self.dir_not_watched, "new_file.txt"))
-        self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+        self.assertFalse(self._changed(), msg=self.file_not_watched)
 
     def test_delete_file(self):
         """Test that when a file is deleted returns True"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-
         for file in self.files:
-            os.remove(file)
-            self.assertTrue(watcher.changed())
+            utils.remove_file(file)
+            self.assertTrue(self._changed())
 
-        os.remove(self.file_not_watched)
-        self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+        utils.remove_file(self.file_not_watched)
+        self.assertFalse(self._changed(), msg=self.file_not_watched)
 
     def test_create_dir(self):
         """Test that when a directory is created returns True"""
-        watcher = dir_watcher.DirWatcher(self.files, self.dirs)
-
         for adir in self.dirs:
             new_dir = os.path.join(adir, "new_dir")
-            os.mkdir(new_dir)
-            self.assertTrue(watcher.changed())
+            utils.create_dir(new_dir)
+            self.assertTrue(self._changed())
 
-        os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
-        self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+        utils.create_dir(os.path.join(self.dir_not_watched, "new_dir"))
+        self.assertFalse(self._changed(), msg=self.file_not_watched)
 
     def test_delete_dir(self):
         """Test that when a directory is removed returns True"""
         for file in self.files:
-            os.remove(file)
-        os.remove(self.file_not_watched)
+            utils.remove_file(file)
+        utils.remove_file(self.file_not_watched)
 
-        watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.stop()  # will create it differently
+        self.watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.start()
 
         for adir in sorted(self.dirs, reverse=True):
-            os.rmdir(adir)
-            self.assertTrue(watcher.changed())
+            utils.remove_dir(adir)
+            self.assertTrue(self._changed())
 
-        os.rmdir(self.dir_not_watched)
-        self.assertFalse(watcher.changed(), msg=self.file_not_watched)
+        utils.remove_dir(self.dir_not_watched)
+        self.assertFalse(self._changed(), msg=self.file_not_watched)
 
     def test_create_file_in_created_dir(self):
         """Test that when a file is created under a created dir returns True"""
-        watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.stop()  # will create it differently
+        self.watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.start()
 
         for adir in self.dirs:
             new_dir = os.path.join(adir, "new_dir")
-            os.mkdir(new_dir)
-            self.assertTrue(watcher.changed())
+            utils.create_dir(new_dir)
+            self.assertTrue(self._changed())
             new_file = os.path.join(new_dir, "new_file.txt")
             utils.create_file(new_file)
-            self.assertTrue(watcher.changed())
+            self.assertTrue(self._changed())
 
-        os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
-        self.assertFalse(watcher.changed())
-        utils.create_file(os.path.join(self.dir_not_watched, "new_dir", "new_file.txt"))
-        self.assertFalse(watcher.changed())
+        utils.create_dir(os.path.join(self.dir_not_watched, "new_dir"))
+        self.assertFalse(self._changed())
+        utils.create_file(os.path.join(
+            self.dir_not_watched, "new_dir", "new_file.txt"))
+        self.assertFalse(self._changed())
 
     def test_create_dir_in_created_dir(self):
         """Test that when a dir is created under a created dir returns True"""
-        watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.stop()  # will create it differently
+        self.watcher = dir_watcher.DirWatcher([], self.dirs)
+        self.watcher.start()
 
         for adir in self.dirs:
             new_dir = os.path.join(adir, "new_dir")
-            os.mkdir(new_dir)
-            self.assertTrue(watcher.changed())
-            new_sub_dir = os.path.join(adir, "new_dir", "sub_dir")
-            os.mkdir(new_sub_dir)
-            self.assertTrue(watcher.changed())
+            utils.create_dir(new_dir)
 
-        os.mkdir(os.path.join(self.dir_not_watched, "new_dir"))
-        self.assertFalse(watcher.changed())
-        os.mkdir(os.path.join(self.dir_not_watched, "new_dir", "sub_dir"))
-        self.assertFalse(watcher.changed())
+            self.assertTrue(self._changed())
+            new_sub_dir = os.path.join(adir, "new_dir", "sub_dir")
+            utils.create_dir(new_sub_dir)
+            self.assertTrue(self._changed())
+
+        utils.create_dir(os.path.join(self.dir_not_watched, "new_dir"))
+        self.assertFalse(self._changed())
+        utils.create_dir(os.path.join(
+            self.dir_not_watched, "new_dir", "sub_dir"))
+        self.assertFalse(self._changed())
 
 
 if __name__ == "__main__":
