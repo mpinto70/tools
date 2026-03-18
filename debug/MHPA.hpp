@@ -5,22 +5,29 @@
 #include <sstream>
 #include <thread>
 
-inline std::size_t MHPA_get_spacing(int increment = 0) {
+#define MHPA_TRACE_FUNC() MHPA::debug MHPA_dbg(__func__, "()")
+#define MHPA_TRACE() MHPA_dbg(std::source_location::current())
+#define MHPA_LOG(...) MHPA_dbg(std::source_location::current(), __VA_ARGS__)
+
+namespace MHPA {
+inline std::size_t _get_spacing(int increment = 0) {
   thread_local std::size_t spacing = 0;
   spacing += increment;
   return spacing;
 }
 
 template <typename... Args>
-std::string MHPA_to_string(Args &&...args) {
+std::string _to_string(Args &&...args) {
   std::stringstream ss;
   (ss << ... << std::forward<Args>(args));
   return ss.str();
 }
 
+std::string _to_string() { return ""; }
+
 template <typename... Args>
-void MHPA_print(std::thread::id threadId, std::source_location local,
-                Args &&...args) {
+void _print(std::thread::id threadId, std::source_location local,
+            Args &&...args) {
   std::stringstream ss;
   ss << "MHPA " << threadId << " ";
   (ss << ... << std::forward<Args>(args));
@@ -33,27 +40,26 @@ void MHPA_print(std::thread::id threadId, std::source_location local,
   std::cerr << ss.str();
 }
 
-class MHPA_debug final {
+template <typename... Ts>
+class debug final {
  public:
-  template <typename... Args>
-  MHPA_debug(Args &&...args,
-             std::source_location local = std::source_location::current())
+  debug(Ts &&...ts,
+        std::source_location local = std::source_location::current())
       : threadId_(std::this_thread::get_id()),
-        local_(local),
-        name_(MHPA_to_string(std::forward<Args>(args)...)),
-        spaces_(MHPA_get_spacing() * 2, ' '),
-        spaces2_(MHPA_get_spacing(1) * 2, ' ') {
-    MHPA_print(threadId_, local_, spaces_, ">>| ", name_);
+        local_(std::move(local)),
+        name_(_to_string(std::forward<Ts>(ts)...)),
+        spaces_(_get_spacing() * 2, ' '),
+        spaces2_(_get_spacing(1) * 2, ' ') {
+    _print(threadId_, local_, spaces_, ">>| ", name_);
   }
-  ~MHPA_debug() {
-    MHPA_print(threadId_, local_, spaces_, "<<| ", name_);
-    MHPA_get_spacing(-1);
+  ~debug() {
+    _print(threadId_, local_, spaces_, "<<| ", name_);
+    _get_spacing(-1);
   }
 
   template <typename... Args>
-  void dbg(Args &&...args,
-           std::source_location local = std::source_location::current()) {
-    MHPA_print(threadId_, local, spaces2_, "| ", std::forward<Args>(args)...);
+  void operator()(std::source_location local, Args &&...args) {
+    _print(threadId_, local, spaces2_, "| ", std::forward<Args>(args)...);
   }
 
  private:
@@ -63,3 +69,8 @@ class MHPA_debug final {
   std::string spaces_;
   std::string spaces2_;
 };
+
+template <typename... Args>
+debug(Args &&...) -> debug<Args...>;
+
+}  // namespace MHPA
