@@ -1,3 +1,4 @@
+// #define NODEBUG
 #include <debug/debug.hpp>
 #include <gtest/gtest.h>
 

@@ -1,5 +1,12 @@
 #pragma once
 
+#ifdef NODEBUG
+
+#define DEBUG_TRACE_FUNC(...)
+#define DEBUG_LOG(...)
+
+#else
+
 #include <cstring>
 #include <iostream>
 #include <source_location>
@@ -14,8 +21,8 @@
 #define DEBUG_MIN_SPACING 80
 #endif
 
-#define DEBUG_TRACE_FUNC(...) DEBUG::debug DEBUG_dbg(__func__, _to_string(__VA_ARGS__))
-#define DEBUG_LOG(...)        DEBUG_dbg(std::source_location::current(), _to_string(__VA_ARGS__))
+#define DEBUG_TRACE_FUNC(...) ::DEBUG::debug DEBUG_dbg(__func__, ::DEBUG::_to_string(__VA_ARGS__))
+#define DEBUG_LOG(...)        DEBUG_dbg(std::source_location::current(), ::DEBUG::_to_string(__VA_ARGS__))
 
 namespace DEBUG {
 
@@ -110,3 +117,5 @@ private:
 };
 
 } // namespace DEBUG
+
+#endif
