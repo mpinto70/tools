@@ -1,0 +1,82 @@
+---
+Language:        Cpp
+BasedOnStyle:    Google
+AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+AlignArrayOfStructures: Left
+AlignConsecutiveBitFields:
+  Enabled:         true
+AlignConsecutiveMacros:
+  Enabled:         true
+AlignEscapedNewlines: Right
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: false
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterClass:      false
+  AfterControlStatement: Never
+  AfterEnum:       false
+  AfterExternBlock: false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+BreakArrays:     false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BreakInheritanceList: AfterComma
+ColumnLimit:     100
+ConstructorInitializerIndentWidth: 6
+ContinuationIndentWidth: 6
+Cpp11BracedListStyle: false
+DerivePointerAlignment: false
+IncludeBlocks:   Regroup
+IncludeCategories:
+  - Regex:           '^<\.\./'
+    Priority:        120
+  - Regex:           '^<brasa/'
+    Priority:        150
+  - Regex:           '^(<[^/.]*>)' # stdlib
+    Priority:        1000
+  - Regex:           '^(<)'
+    Priority:        900
+  - Regex:           '.*'
+    Priority:        200
+IndentWidth:     4
+IndentWrappedFunctionNames: true
+InsertBraces:    true
+InsertNewlineAtEOF: true
+IntegerLiteralSeparator:
+  Binary:          4
+  BinaryMinDigits: 0
+  Decimal:         3
+  DecimalMinDigits: 5
+  Hex:             4
+  HexMinDigits:    0
+LineEnding:      LF
+PackConstructorInitializers: CurrentLine
+ShortNamespaceLines: 0
+SortUsingDeclarations: Lexicographic
+SpaceAfterCStyleCast: true
+SpacesBeforeTrailingComments: 1
+SpacesInContainerLiterals: false
+Standard:        c++20
+TabWidth:        4
+...
+
