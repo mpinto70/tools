@@ -7,11 +7,17 @@
 
 #else
 
+#include <cxxabi.h>
+
 #include <cstring>
+#include <iomanip>
 #include <iostream>
+#include <memory>
 #include <source_location>
 #include <sstream>
 #include <thread>
+#include <typeinfo>
+#include <vector>
 
 #ifndef PROJECT_DIR
 #define PROJECT_DIR ""
@@ -28,6 +34,34 @@ namespace DEBUG {
 
 constexpr const char _project_dir[] = PROJECT_DIR;
 constexpr std::size_t _project_dir_len = sizeof(_project_dir) - 1;
+
+template <typename T>
+inline std::string demangle() {
+    int status = 0;
+    // __cxa_demangle allocates memory via malloc; unique_ptr cleans it up automatically
+    std::unique_ptr<char, void (*)(void*)> res{
+        abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status),
+        std::free
+    };
+
+    return (status == 0) ? res.get() : typeid(T).name();
+}
+
+inline std::string dump_bytes(const std::vector<uint8_t>& bytes) {
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+    for (size_t i = 0; i < bytes.size() && i < 100; ++i) {
+        if (i > 0) {
+            oss << ' ';
+        }
+        oss << std::setw(2) << static_cast<int>(bytes[i]);
+    }
+    oss << std::dec; // Reset to decimal for any further output
+    if (bytes.size() > 100) {
+        oss << " ... (" << bytes.size() - 100 << " more bytes)";
+    }
+    return oss.str();
+}
 
 inline std::size_t _get_spacing(int increment = 0) {
     thread_local std::size_t spacing = 0;
